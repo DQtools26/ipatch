@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iPatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#14284b;--sea:#1aa7a1;--sun:#ffc531;--coral:#ff6a55;--sand:#bfe9ff;--mut:#5b6b88}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Nunito',system-ui,sans-serif;background:var(--sand);color:var(--navy);font-weight:700;line-height:1.4}
+h1,h2,h3,.disp{font-family:'Baloo 2','Nunito',system-ui,sans-serif;margin:0;font-weight:800;line-height:1.1}
+h2{font-size:1.5rem;margin-bottom:6px}h3{font-size:1.15rem;margin-bottom:4px}
+p{margin:4px 0}.mut{color:var(--mut);font-size:.9rem}
+header{background:var(--navy);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header .logo{font-size:1.6rem;margin-right:auto;display:flex;align-items:center;gap:8px}
+.chip{background:#ffffff22;border-radius:20px;padding:5px 12px;font-weight:800;white-space:nowrap}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;background:#ffe9a8;position:sticky;top:0;z-index:5}
+.tab{flex:1;min-width:84px;border:3px solid var(--navy);background:#fff;color:var(--navy);border-radius:14px;padding:8px 6px;font:inherit;font-weight:800;cursor:pointer;white-space:nowrap}
+.tab.on{background:var(--navy);color:#fff}
+.tab i{font-style:normal;background:var(--coral);color:#fff;border-radius:10px;padding:0 7px;margin-left:4px;font-size:.8rem}
+main{max-width:760px;margin:0 auto;padding:6px 14px 40px}
+.card{background:#fff;border:3px solid var(--navy);box-shadow:0 5px 0 var(--navy);border-radius:20px;padding:16px;margin:16px 0}
+.btn{border:0;border-radius:14px;padding:11px 16px;font:inherit;font-weight:800;cursor:pointer;background:var(--sun);color:var(--navy);box-shadow:0 4px 0 #c99200}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #c99200}
+.btn.sea{background:var(--sea);color:#fff;box-shadow:0 4px 0 #0e7570}
+.btn.red{background:var(--coral);color:#fff;box-shadow:0 4px 0 #bf3f2e}
+.btn.ghost{background:#fff;box-shadow:0 4px 0 #cdd5e3}
+.btn.sm{padding:6px 12px;font-size:.9rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:4px solid var(--coral);outline-offset:2px}
+input{font:inherit;font-weight:700;border:3px solid var(--navy);border-radius:12px;padding:10px 12px;width:100%;background:#fff;color:var(--navy)}
+label{display:block;margin:10px 0 4px;font-weight:800}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>input{flex:1;min-width:90px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#fff;border:3px solid var(--navy);border-radius:18px;text-align:center;padding:12px 4px}
+.stat b{display:block;font-family:'Baloo 2',sans-serif;font-size:2rem;line-height:1}
+.stat span{font-size:.85rem;color:var(--mut)}
+.bar{height:34px;background:#dfe7f3;border-radius:20px;position:relative;margin:34px 6px 10px;border:3px solid var(--navy)}
+.fill{height:100%;background:var(--sea);border-radius:16px;transition:width .6s}
+.rider{position:absolute;top:-30px;font-size:36px;transform:translateX(-50%);transition:left .6s}
+.big{font-family:'Baloo 2',sans-serif;font-size:1.8rem}
+.chars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.chars button{font-size:2.2rem;border:3px solid var(--navy);border-radius:16px;background:#fff;padding:6px;cursor:pointer}
+.chars button.on{background:var(--sun)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:8px}
+.cal div{aspect-ratio:1;display:grid;place-items:center;border-radius:12px;background:#f1f4fa;font-size:.9rem}
+.cal .hd{background:none;aspect-ratio:auto;color:var(--mut);font-size:.8rem}
+.cal .ok{background:var(--sun)}.cal .part{background:#cdeeed}.cal .now{outline:3px solid var(--coral)}
+.item{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:2px dashed #cdd5e3;padding:12px 0}
+.item:first-of-type{border-top:0}
+.price{background:var(--sun);border-radius:14px;padding:3px 10px;white-space:nowrap}
+.timer{font-family:'Baloo 2',sans-serif;font-size:4.2rem;text-align:center;margin:10px 0;font-variant-numeric:tabular-nums}
+.ladder .item b{font-family:'Baloo 2',sans-serif}
+.bars{display:flex;gap:8px;align-items:flex-end;height:90px}
+.bars div{flex:1;text-align:center;font-size:.8rem;color:var(--mut)}
+.bars span{display:block;background:var(--sea);border-radius:8px 8px 0 0;min-height:4px}
+.modal{position:fixed;inset:0;background:#14284bcc;display:grid;place-items:center;z-index:20;padding:16px}
+.modal .card{width:100%;max-width:340px;margin:0}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:16px;transition:transform .3s;z-index:30;max-width:90%;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:25}
+.note{font-size:.8rem;color:var(--mut);text-align:center;margin-top:24px}
+.link{background:none;border:0;color:var(--mut);text-decoration:underline;font:inherit;cursor:pointer}
+.hero-card{text-align:center}
+.quest{display:flex;align-items:center;gap:8px;margin:38px 0 6px}.isle,.chest{font-size:2.6rem}.chest.open{animation:pop .5s}
+.path{flex:1;position:relative;height:18px;display:flex;justify-content:space-between;align-items:center}
+.stone{width:14px;height:14px;border-radius:50%;background:#d6c79a}.stone.on{background:var(--sun)}
+.hero{position:absolute;top:-40px;font-size:2.4rem;transform:translateX(-50%);transition:left .6s}
+.bob{animation:bob .6s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-8px)}}@keyframes pop{50%{transform:scale(1.5)}}
+.btn.go{background:#3ecf8e;color:#073b27;box-shadow:0 5px 0 #1f9a64;font-size:1.3rem;padding:16px 20px;width:100%;margin-top:10px}
+.btn.go:active{box-shadow:0 1px 0 #1f9a64}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.tile{border:3px solid var(--navy);border-radius:20px;padding:12px 4px;text-align:center;font-weight:800;box-shadow:0 4px 0 var(--navy)}
+.tile b{display:block;font-family:'Baloo 2',sans-serif;font-size:1.9rem}
+.t1{background:#ffd9d2}.t2{background:#fff0b3}.t3{background:#e3d9ff}.tile.wide{margin:10px 0}
+details.card summary{cursor:pointer;font-size:1.2rem;list-style:none}
+.ringbox{position:relative;width:min(300px,80vw);margin:0 auto}.ringbox svg{width:100%;transform:rotate(-90deg)}
+.rbg,.rfg{fill:none;stroke-width:14}.rbg{stroke:#dfe7f3}.rfg{stroke:#3ecf8e;stroke-linecap:round;transition:stroke-dashoffset .5s}
+.rin{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.hero2{font-size:3.4rem;display:inline-block}
+.ringbox .timer{font-size:2.5rem;margin:0}
+.meter{height:20px;background:#e6ebf5;border:3px solid var(--navy);border-radius:14px;overflow:hidden;margin:10px 0}.meter i{display:block;height:100%;background:var(--sun)}.meter.big{height:28px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.rw{text-align:center;margin:0}.rw .ic{font-size:3.6rem}.rw .btn{width:100%;margin-top:6px}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.badge{background:#fff;border:3px solid var(--navy);border-radius:18px;text-align:center;padding:10px 2px;font-size:.8rem;font-weight:800}
+.badge span{display:block;font-size:2.2rem}.badge small{display:block;color:var(--mut)}.badge.lock{opacity:.5}
+.bnav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:6px;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:var(--navy);z-index:6}
+.bnav .tab{min-width:0;border:0;background:transparent;color:#fff;font-size:1.7rem;padding:6px 2px;border-radius:14px}
+.bnav .tab small{display:block;font-size:.72rem;font-weight:800}.bnav .tab.on{background:var(--sun);color:var(--navy)}
+main.kid{padding-bottom:120px}.sec{margin:16px 0 4px}.cal .ok{font-size:1.4rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="toast"></div><canvas id="fx"></canvas>
+<script>
+const K='ipatch.v1',AK='ipatch.auth',SB='https://ecoquyulvydsczpjgoke.supabase.co',KEY='sb_publishable_hXSE8yJ55tyUOnMB2JpGhw_bXNIETvB';
+let AU=null,qt=0,busy=false,dirty=false;try{AU=JSON.parse(localStorage.getItem(AK)||'null')}catch(e){}
+let S=null;try{S=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
+if(S&&!S.pending)S.pending=[];
+const ui={cr:!AU&&!S,sy:'',mode:'kid',tab:'home',gate:false,cm:new Date(),fd:null,ch:'🦊'};
+const CH=['🦊','🐙','🦜','🐲','🦄','🐼','🦈','🐸'];
+const TITLES=['Deckhand','Swabbie','Lookout','Navigator','First Mate','Captain','Admiral','Sea Legend'];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(AU){clearTimeout(qt);qt=setTimeout(()=>sync(),1200)}};
+const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>ds(new Date());
+const fmtMin=m=>{const h=Math.floor(m/60),r=m%60;return h?(h+'h'+(r?' '+r+'m':'')):r+'m'};
+const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
+  rewards:[{id:1,name:'Extra bedtime story',desc:'One more chapter!',price:15,ic:'📖'}],reqs:[],pending:[],timer:{run:false,start:0,acc:0}});
+const nid=()=>Date.now()*10+Math.floor(Math.random()*10),uid=()=>Date.now()+'-'+Math.random().toString(36).slice(2,7);
+const pn=()=>S.pending.filter(e=>e.st!=='done'),rws=()=>S.rewards.filter(r=>!r.del);
+const lvl=x=>Math.floor(Math.sqrt(x/60))+1;
+const title=l=>TITLES[Math.min(l-1,TITLES.length-1)];
+const met=d=>(S.logs[d]||0)>0&&S.logs[d]>=(S.goalOn[d]||S.goal);
+function streak(){const d=new Date();if(!met(ds(d)))d.setDate(d.getDate()-1);let n=0;while(met(ds(d))){n++;d.setDate(d.getDate()-1)}return n}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2800)}
+function boom(){const c=$('#fx'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
+  const cols=['#ffc531','#1aa7a1','#ff6a55','#14284b','#fff'];
+  const p=Array.from({length:90},()=>({x:c.width/2,y:c.height/3,vx:(Math.random()-.5)*14,vy:-Math.random()*13-2,r:Math.random()*6+3,c:cols[Math.floor(Math.random()*5)]}));
+  let f=0;(function go(){x.clearRect(0,0,c.width,c.height);p.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=.4;x.fillStyle=q.c;x.fillRect(q.x,q.y,q.r,q.r)});if(++f<80)requestAnimationFrame(go);else x.clearRect(0,0,c.width,c.height)})()}
+
+function derive(){S.logs={};S.coins=0;let x=0;
+  S.tx.forEach(t=>{if(t.k==='min'){S.logs[t.d]=(S.logs[t.d]||0)+t.n;x+=t.n}else S.coins+=t.n});
+  Object.keys(S.logs).forEach(d=>{S.logs[d]=Math.max(0,S.logs[d])});S.coins=Math.max(0,S.coins);S.xp=Math.max(0,x+25*Object.keys(S.awarded).length)}
+function coin(n,w){S.tx.push({id:uid(),k:'coin',n:n,w:w});derive();save()}
+function addMin(m,d){d=d||today();const L0=lvl(S.xp);
+  if(m)S.tx.push({id:uid(),k:'min',d:d,n:m});S.goalOn[d]=S.goalOn[d]||S.goal;derive();
+  let won=false;
+  if((S.logs[d]||0)>=S.goalOn[d]&&!S.awarded[d]){S.awarded[d]=1;S.tx.push({id:uid(),k:'coin',n:S.cpg,w:'goal'});derive();won=true}
+  save();
+  if(won&&d===today()){toast('Goal complete! +'+S.cpg+' coins 🪙');boom()}
+  else if(lvl(S.xp)>L0){toast('Level up! You are now a '+title(lvl(S.xp))+' ⚓');boom()}
+  render();}
+
+/* ---------- auth ---------- */
+function pick(i){ui.ch=CH[i];document.querySelectorAll('.chars button').forEach((b,j)=>b.classList.toggle('on',i===j))}
+const saveAU=()=>{try{AU?localStorage.setItem(AK,JSON.stringify(AU)):localStorage.removeItem(AK)}catch(e){}};
+function setAU(j){AU={at:j.access_token,rt:j.refresh_token,exp:Date.now()+(j.expires_in||3600)*1000,uid:j.user.id,email:j.user.email};saveAU()}
+async function refresh(){const r=await fetch(SB+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:AU.rt})});
+  if(!r.ok){AU=null;saveAU();throw new Error('auth')}setAU(await r.json())}
+async function api(path,o){o=o||{};const h=Object.assign({apikey:KEY,'Content-Type':'application/json'},o.h||{});
+  if(o.auth!==false&&AU){if(Date.now()>AU.exp-60000)await refresh();h.Authorization='Bearer '+AU.at}
+  const r=await fetch(SB+path,{method:o.m||'GET',headers:h,body:o.b?JSON.stringify(o.b):undefined});
+  let j=null;try{j=await r.json()}catch(e){}return{ok:r.ok,st:r.status,j:j}}
+async function doAuth(create){const e=$('#e').value.trim().toLowerCase(),p=$('#p').value,pin=create?$('#pin').value:'';
+  if(!e.includes('@')||p.length<6||(create&&!/^\d{4}$/.test(pin))){toast(create?'Need an email, a password (6+ characters), and a 4-digit parent PIN':'Enter your email and password');return}
+  toast('One moment…');
+  try{const r=await api(create?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{m:'POST',auth:false,b:{email:e,password:p}});
+    if(!r.ok){toast((r.j&&(r.j.msg||r.j.error_description||r.j.message))||'That did not work');return}
+    if(!r.j.access_token){toast('Check your email to confirm it, then sign in');return}
+    setAU(r.j);if(S&&S.uid&&S.uid!==AU.uid)S=null;
+    if(!S){S=fresh();if(create){S.pin=pin;S.char=ui.ch}else{S.setAt=0;S.rewards=[]}}
+    S.uid=AU.uid;ui.mode='kid';ui.tab='home';save();await sync();render()}
+  catch(x){toast('Can’t reach the internet. Try again.')}}
+async function signOut(){try{await sync()}catch(x){}AU=null;saveAU();S=null;try{localStorage.removeItem(K)}catch(e){}ui.mode='kid';ui.cr=false;render()}
+
+/* ---------- sync ---------- */
+const canon=v=>Array.isArray(v)?'['+v.map(canon).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}':JSON.stringify(v);
+const byId=a=>a.slice().sort((x,y)=>String(x.id)<String(y.id)?-1:1);
+const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
+function uni(x,y,f){const m=new Map();(x||[]).concat(y||[]).forEach(e=>{const o=m.get(e.id);m.set(e.id,o?f(o,e):e)});return Array.from(m.values())}
+function mergeIn(r){
+  if((r.setAt||0)>(S.setAt||0)){['pin','char','goal','cpg','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
+  S.tx=uni(S.tx,r.tx,o=>o);S.pending=uni(S.pending,r.pending,(o,e)=>o.st==='done'?o:e);
+  S.rewards=uni(S.rewards,r.rewards,(o,e)=>o.del?o:e);S.reqs=uni(S.reqs,r.reqs,(o,e)=>o.st!=='pending'?o:e);
+  S.awarded=Object.assign({},r.awarded,S.awarded);S.goalOn=Object.assign({},r.goalOn,S.goalOn);derive()}
+function sy(t){ui.sy=t;const e=$('#cs');if(e)e.textContent=t}
+function rerender(){const a=document.activeElement;if(!(a&&a.tagName==='INPUT'))render()}
+async function sync(){if(!AU||!S)return;if(busy){dirty=true;return}busy=true;
+  try{for(let n=0;n<3;n++){
+    const g=await api('/rest/v1/families?id=eq.'+AU.uid+'&select=data,rev');
+    if(!g.ok)throw new Error('get '+g.st);
+    const row=g.j&&g.j[0],before=canon(snap());
+    if(row)mergeIn(row.data||{});
+    if(!S.pin)S.pin='0000';
+    const mine=snap(),changed=canon(mine)!==before;
+    if(row&&canon(row.data)===canon(mine)){if(changed){save();rerender()}sy('☁️ synced');break}
+    const body={data:mine,rev:(row?row.rev:0)+1},hd={Prefer:'return=representation'};
+    const w=row?await api('/rest/v1/families?id=eq.'+AU.uid+'&rev=eq.'+row.rev,{m:'PATCH',b:body,h:hd}):await api('/rest/v1/families',{m:'POST',b:Object.assign({id:AU.uid},body),h:hd});
+    if(w.ok&&w.j&&w.j.length){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(changed)rerender();sy('☁️ synced');break}
+    if(n===2)throw new Error('conflict')}
+  }catch(x){sy('⚠️ offline')}
+  busy=false;if(dirty){dirty=false;sync()}}
+function boot(){
+  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];
+    if(!S.tx.length){Object.keys(S.logs||{}).forEach(d=>S.tx.push({id:uid(),k:'min',d:d,n:S.logs[d]}));if(S.coins)S.tx.push({id:uid(),k:'coin',n:S.coins,w:'migrate'})}
+    S.pending.forEach(e=>{e.st=e.st||'new'});derive()}
+  if(AU&&!S){S=fresh();S.setAt=0;S.rewards=[];S.uid=AU.uid;derive()}
+  render();sync()}
+
+function openGate(){ui.gate=true;render();setTimeout(()=>{const g=$('#gp');g&&g.focus()},50)}
+function tryGate(){if($('#gp').value===S.pin){ui.gate=false;ui.mode='parent';ui.tab='ov';render()}else{toast('Wrong PIN');$('#gp').value=''}}
+function setMode(m){ui.mode=m;ui.tab=m==='kid'?'home':'ov';render()}
+function setTab(t){ui.tab=t;render()}
+
+/* ---------- kid actions ---------- */
+function addCustom(){const v=parseInt($('#am').value,10);if(!(v>=1&&v<=600)){toast('Type minutes between 1 and 600');return}submit(v)}
+const elapsed=()=>S.timer.acc+(S.timer.run?Date.now()-S.timer.start:0);
+function tToggle(){const t=S.timer;if(t.run){t.acc+=Date.now()-t.start;t.run=false}else{t.start=Date.now();t.run=true}save();render()}
+function tFinish(){const ms=elapsed();
+  if(ms<10000){toast('Patch a little longer first. Under 10 seconds can’t count.');return}
+  const mins=Math.max(1,Math.round(ms/60000));S.timer={run:false,start:0,acc:0};save();submit(mins,'timer')}
+function submit(m,src){S.pending.unshift({id:nid(),m:m,d:today(),src:src||'manual',st:'new'});save();toast('Sent! A grown-up will check it ⏳');render()}
+function okTime(id,ok){const i=S.pending.findIndex(x=>x.id===id);if(i<0||S.pending[i].st==='done')return;const e=S.pending[i];
+  const v=ok?parseInt($('#pm'+id).value,10):0;e.st='done';save();
+  if(ok&&v>0)addMin(v,e.d);else render()}
+function tDiscard(){if(confirm('Throw away this timer without logging it?')){S.timer={run:false,start:0,acc:0};save();render()}}
+function ask(id){const r=S.rewards.find(x=>x.id===id);if(!r||S.coins<r.price)return;
+  coin(-r.price,'hold');S.reqs.unshift({id:nid(),name:r.name,price:r.price,st:'pending',t:today()});save();toast('Asked! A grown-up will check it 🎁');render()}
+function cal(n){ui.cm=new Date(ui.cm.getFullYear(),ui.cm.getMonth()+n,1);render()}
+
+/* ---------- parent actions ---------- */
+function saveGoal(){const h=parseInt($('#gh').value,10)||0,m=parseInt($('#gm').value,10)||0,c=parseInt($('#gc').value,10);
+  const g=h*60+m;if(g<1||g>1440||!(c>=0)){toast('Enter a goal and a coin amount');return}
+  S.goal=g;S.cpg=c;S.setAt=Date.now();const t=today();if(!S.awarded[t])S.goalOn[t]=g;save();addMin(0);toast('Saved')}
+function adj(sign){const v=parseInt($('#ac').value,10);if(!(v>0))return;coin(sign>0?v:-Math.min(v,S.coins),'adjust');toast('Coins now '+S.coins);render()}
+function newPin(){const p=$('#np').value;if(!/^\d{4}$/.test(p)){toast('PIN must be 4 digits');return}S.pin=p;S.setAt=Date.now();save();toast('PIN changed')}
+function addReward(){const n=$('#rn').value.trim(),d=$('#rd').value.trim(),p=parseInt($('#rp').value,10);
+  if(!n||!(p>=1)){toast('A reward needs a name and a coin price');return}
+  S.rewards.push({id:nid(),name:n,desc:d,price:p,ic:Array.from($('#ri').value.trim())[0]||'🎁'});save();render()}
+function delReward(id){if(confirm('Delete this reward?')){const r=S.rewards.find(x=>x.id===id);if(r)r.del=1;save();render()}}
+function resolve(id,ok){const r=S.reqs.find(x=>x.id===id);if(!r)return;r.st=ok?'approved':'denied';if(!ok)coin(r.price,'refund');save();render()}
+function fixDay(){const v=parseInt($('#fm').value,10);if(!(v>=0&&v<=1440)){toast('Enter minutes from 0 to 1440');return}
+  const d=ui.fd||today();addMin(v-(S.logs[d]||0),d);toast('Log updated')}
+function fixDate(v){ui.fd=v||today();render()}
+
+/* ---------- views ---------- */
+function bar(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0,p=Math.min(100,Math.round(m/g*100));
+  return `<div class="bar"><div class="fill" style="width:${p}%"></div><div class="rider" style="left:clamp(20px,${p}%,calc(100% - 20px))">${S.char}</div></div>
+  <p class="big" style="text-align:center">${m} of ${g} minutes</p>
+  <p class="mut" style="text-align:center">${m>=g?'Goal complete. Great job!':(g-m)+' minutes to go'}</p>`}
+function stats(){return `<div class="stats"><div class="stat"><b>🔥 ${streak()}</b><span>day streak</span></div>
+  <div class="stat"><b>🪙 ${S.coins}</b><span>coins</span></div><div class="stat"><b>⭐ ${lvl(S.xp)}</b><span>level</span></div></div>`}
+
+function pw(){const m=pn().reduce((a,e)=>a+e.m,0);return m?`<p class="chip" style="background:#fff0b3;color:var(--navy);display:inline-block">⏳ ${m} min waiting for a grown-up to say OK</p>`:''}
+function chart(n){const days=[],d=new Date();for(let i=n-1;i>=0;i--){const x=new Date(d);x.setDate(d.getDate()-i);days.push(ds(x))}
+  const vals=days.map(k=>S.logs[k]||0),mx=Math.max(S.goal,...vals,30)*1.15,W=640,H=230,L=40,B=28,T=14,cw=(W-L)/n,bw=cw*.64,y=v=>T+(H-T-B)*(1-v/mx);
+  let bars='';days.forEach((k,i)=>{const x=L+i*cw+(cw-bw)/2,v=vals[i],h=y(0)-y(v),ok=met(k);
+    bars+=`<rect x="${x}" y="${y(v)}" width="${bw}" height="${h}" rx="4" style="fill:${ok?'var(--sun)':'var(--sea)'};stroke:var(--navy);stroke-width:${v?2:0}"/>`;
+    if(n<=14&&v)bars+=`<text x="${x+bw/2}" y="${y(v)-4}" text-anchor="middle" style="font:800 11px Nunito,sans-serif;fill:var(--navy)">${v}</text>`;
+    if(i%Math.ceil(n/10)===0||i===n-1)bars+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" style="font:700 11px Nunito,sans-serif;fill:var(--mut)">${+k.slice(8)}</text>`});
+  const avg=Math.round(vals.reduce((a,b)=>a+b,0)/n),hit=days.filter(met).length;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" role="img" aria-label="Minutes patched each day"><line x1="${L}" x2="${W}" y1="${y(0)}" y2="${y(0)}" style="stroke:var(--navy);stroke-width:2"/>
+  <line x1="${L}" x2="${W}" y1="${y(S.goal)}" y2="${y(S.goal)}" style="stroke:var(--coral);stroke-width:2;stroke-dasharray:6 5"/>
+  <text x="${L-5}" y="${y(S.goal)+4}" text-anchor="end" style="font:800 11px Nunito,sans-serif;fill:var(--coral)">goal</text>${bars}</svg>
+  <p class="mut">Average ${avg} min a day · goal met on ${hit} of ${n} days · yellow bars hit the goal</p>`}
+function chartCard(n,tg){return `<div class="card"><h3>${tg?'Minutes per day':'Your last '+n+' days'}</h3>${tg?`<div class="row" style="margin:8px 0">${[7,14,30].map(r=>`<button class="btn sm ${r===n?'sea':'ghost'}" onclick="ui.range=${r};render()">${r} days</button>`).join('')}</div>`:''}${chart(n)}</div>`}
+function timeCard(){return `<div class="card"><h2>Time to approve</h2>`+(pn().length?pn().map(e=>`<div class="item"><div><h3>${e.src==='timer'?'⏱ Timer':'✍️ Typed in'} · ${e.d===today()?'today':e.d}</h3><p class="mut">Change the minutes if needed</p></div>
+  <div class="row"><input id="pm${e.id}" type="number" min="1" max="600" value="${e.m}" aria-label="Minutes"><button class="btn sea sm" onclick="okTime(${e.id},true)">Approve</button><button class="btn red sm" onclick="okTime(${e.id},false)">Deny</button></div></div>`).join(''):'<p class="mut">Nothing waiting.</p>')+'<p class="mut">Time only counts toward goals, coins and XP after you approve it.</p></div>'}
+function quest(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0,p=Math.min(1,m/g);
+  const st=Array.from({length:9},(_,i)=>`<span class="stone ${p>0&&i/8<=p?'on':''}"></span>`).join('');
+  return `<div class="quest"><span class="isle">🏝️</span><div class="path">${st}<span class="hero" style="left:${p*100}%">${S.char}</span></div><span class="chest ${m>=g?'open':''}">${m>=g?'💰':'🧰'}</span></div>`}
+function vHome(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0;
+  return `<div class="card hero-card"><h2>Ahoy, ${title(lvl(S.xp))}!</h2>${quest()}<p class="big">${Math.min(m,g)} of ${g} minutes</p>
+  <p class="mut">${m>=g?'You did it! The treasure is yours! 🎉':(g-m)+' more minutes to open the treasure!'}</p>
+  ${pw()}<button class="btn go" onclick="setTab('timer')">▶ Start patch time</button></div>
+  <div class="tiles"><div class="tile t1"><b>🔥 ${streak()}</b>day streak</div><div class="tile t2"><b>🪙 ${S.coins}</b>coins</div><div class="tile t3"><b>⭐ ${lvl(S.xp)}</b>level</div></div>
+  <details class="card"><summary class="disp">Already patched? Add time (a grown-up checks it)</summary><div class="row" style="margin-top:10px"><button class="btn sea" onclick="submit(10)">+10</button><button class="btn sea" onclick="submit(15)">+15</button><button class="btn sea" onclick="submit(30)">+30</button></div>
+  <label for="am">Or type minutes</label><div class="row"><input id="am" type="number" inputmode="numeric" min="1" max="600" placeholder="minutes"><button class="btn" onclick="addCustom()">Add</button></div></details>`}
+function ringOff(){const g=S.goalOn[today()]||S.goal,p=Math.min(1,((S.logs[today()]||0)+elapsed()/60000)/g);return 553*(1-p)}
+function vTimer(){const t=S.timer,idle=!t.run&&t.acc===0;
+  return `<div class="card" style="text-align:center"><h2>${t.run?'Patch time! You’ve got this!':idle?'Ready?':'Paused'}</h2>
+  <div class="ringbox"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" class="rbg"/><circle id="rf" cx="100" cy="100" r="88" class="rfg" style="stroke-dasharray:553;stroke-dashoffset:${ringOff()}"/></svg>
+  <div class="rin"><span class="hero2 ${t.run?'bob':''}">${S.char}</span><div class="timer" id="tm">${fmtT(elapsed())}</div></div></div>
+  <p class="mut">The green ring fills up as you get closer to today’s goal.</p>
+  <button class="btn go" onclick="tToggle()">${t.run?'⏸ Pause':idle?'▶ Start':'▶ Keep going'}</button>
+  ${idle?'':'<button class="btn sea" style="width:100%;margin-top:12px;font-size:1.2rem" onclick="tFinish()">✅ I’m done</button><p><button class="link" onclick="tDiscard()">Throw this timer away</button></p>'}</div>`}
+const fmtT=ms=>{const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60);return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(s%60).padStart(2,'0')};
+
+function vCal(){const y=ui.cm.getFullYear(),m=ui.cm.getMonth(),first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate(),t=today();
+  let c='';['S','M','T','W','T','F','S'].forEach(d=>c+=`<div class="hd">${d}</div>`);
+  for(let i=0;i<first;i++)c+='<div style="background:none"></div>';
+  for(let d=1;d<=n;d++){const k=ds(new Date(y,m,d)),cl=met(k)?'ok':(S.logs[k]>0?'part':'');c+=`<div class="${cl} ${k===t?'now':''}">${met(k)?'⭐':d}</div>`}
+  const done=Object.keys(S.logs).filter(met).length;
+  return `<div class="card"><div class="row" style="justify-content:space-between"><button class="btn ghost sm" onclick="cal(-1)" aria-label="Previous month">◀</button>
+  <h2 style="margin:0">${ui.cm.toLocaleString('default',{month:'long'})} ${y}</h2><button class="btn ghost sm" onclick="cal(1)" aria-label="Next month">▶</button></div>
+  <div class="cal">${c}</div><p class="mut">⭐ goal done · light blue = some time logged</p></div>
+  <div class="stats"><div class="stat"><b>${done}</b><span>days completed</span></div><div class="stat"><b>🔥 ${streak()}</b><span>current streak</span></div><div class="stat"><b>${Object.values(S.logs).reduce((a,b)=>a+b,0)}</b><span>total minutes</span></div></div>`}
+
+function reqList(){const l=S.reqs.slice(0,8);if(!l.length)return '';
+  return `<div class="card"><h3>My requests</h3>`+l.map(r=>`<div class="item"><span>${esc(r.name)}</span><span class="price">${r.st==='pending'?'⏳ waiting':r.st==='approved'?'✅ yes!':'↩ coins back'}</span></div>`).join('')+'</div>'}
+const BADGES=['🧢','⚓','🔭','🧭','🦜','🏴‍☠️','👑','🌊'];
+function vShop(){return `<h2 class="sec">🎁 Reward shop</h2><div class="tile t2 wide">You have <b>🪙 ${S.coins}</b>coins</div>`+
+  (rws().length?'<div class="grid">'+rws().map(r=>{const can=S.coins>=r.price,p=Math.min(100,Math.round(S.coins/r.price*100));
+  return `<div class="card rw"><div class="ic">${esc(r.ic||'🎁')}</div><h3>${esc(r.name)}</h3><p class="mut">${esc(r.desc)}</p><div class="meter"><i style="width:${p}%"></i></div>
+  <button class="btn ${can?'go':'ghost'}" ${can?'':'disabled'} onclick="ask(${r.id})">${can?'🎉 Ask for it! ('+r.price+' 🪙)':(r.price-S.coins)+' more coins'}</button></div>`}).join('')+'</div>':'<div class="card"><p>No rewards yet. Ask a grown-up to add some!</p></div>')+reqList()}
+function vLevels(){const L=lvl(S.xp),lo=60*(L-1)**2,hi=60*L**2,p=Math.round((S.xp-lo)/(hi-lo)*100);
+  return `<div class="card" style="text-align:center"><div class="hero2 bob">${S.char}</div><h2>Level ${L}: ${title(L)}</h2><div class="meter big"><i style="width:${p}%"></i></div>
+  <p>${hi-S.xp} XP to level ${L+1}</p><p class="mut">1 XP every minute. +25 XP for each finished day!</p></div>
+  <div class="badges">`+TITLES.map((t,i)=>`<div class="badge ${L>i?'':'lock'}"><span>${L>i?BADGES[i]:'🔒'}</span>${t}<small>Level ${i+1}</small></div>`).join('')+'</div>'}
+
+function vOv(){const done=Object.keys(S.logs).filter(met).length,pm=pn().reduce((a,e)=>a+e.m,0);
+  return `<div class="card"><h2>Today</h2>${bar()}${pm?`<p class="mut" style="text-align:center">⏳ ${pm} min waiting for your OK (Approvals tab)</p>`:''}</div>${stats()}`+chartCard(ui.range||14,true)+`<p class="mut" style="text-align:center">${done} days completed in total</p>`}
+function vGoals(){const h=Math.floor(S.goal/60),m=S.goal%60;
+  return `<div class="card"><h2>Daily goal</h2><p class="mut">Match this to your child’s eye-care professional’s instructions.</p>
+  <label>Patch time per day</label><div class="row"><input id="gh" type="number" min="0" value="${h}" aria-label="Hours"> hr <input id="gm" type="number" min="0" max="59" value="${m}" aria-label="Minutes"> min</div>
+  <label for="gc">Coins earned for meeting the goal</label><input id="gc" type="number" min="0" value="${S.cpg}">
+  <p><button class="btn sea" onclick="saveGoal()">Save goal</button></p></div>
+  <div class="card"><h3>Coin balance: 🪙 ${S.coins}</h3><div class="row"><input id="ac" type="number" min="1" placeholder="coins"><button class="btn sea" onclick="adj(1)">Add</button><button class="btn red" onclick="adj(-1)">Remove</button></div></div>
+  <div class="card"><h3>Parent PIN</h3><div class="row"><input id="np" type="password" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN"><button class="btn" onclick="newPin()">Change</button></div></div>`}
+
+function vRew(){return `<div class="card"><h2>Rewards</h2>`+(rws().length?rws().map(r=>`<div class="item"><div><h3>${esc(r.name)}</h3><p class="mut">${esc(r.desc)}</p></div>
+  <div style="text-align:right"><div class="price">🪙 ${r.price}</div><button class="btn red sm" style="margin-top:6px" onclick="delReward(${r.id})">Delete</button></div></div>`).join(''):'<p class="mut">No rewards yet.</p>')+`</div>
+  <div class="card"><h3>New reward</h3><label for="rn">Name</label><input id="rn" maxlength="40" placeholder="Ice cream trip"><label for="ri">Picture (one emoji)</label><input id="ri" maxlength="4" placeholder="🍦">
+  <label for="rd">Description</label><input id="rd" maxlength="90" placeholder="Pick any flavor"><label for="rp">Coin price</label><input id="rp" type="number" min="1" placeholder="50">
+  <p><button class="btn sea" onclick="addReward()">Add reward</button></p></div>`}
+
+function vReq(){const p=S.reqs.filter(r=>r.st==='pending'),o=S.reqs.filter(r=>r.st!=='pending').slice(0,8);
+  return timeCard()+`<div class="card"><h2>Reward requests</h2>`+(p.length?p.map(r=>`<div class="item"><div><h3>${esc(r.name)}</h3><span class="price">🪙 ${r.price}</span></div>
+  <div class="row"><button class="btn sea sm" onclick="resolve(${r.id},true)">Approve</button><button class="btn red sm" onclick="resolve(${r.id},false)">Deny</button></div></div>`).join(''):'<p class="mut">Nothing waiting.</p>')+`<p class="mut">Coins are held when your child asks, and returned if you deny.</p></div>`+
+  (o.length?`<div class="card"><h3>Recent</h3>`+o.map(r=>`<div class="item"><span>${esc(r.name)}</span><span class="mut">${r.st}</span></div>`).join('')+'</div>':'')}
+
+function vFix(){const d=ui.fd||today();
+  return `<div class="card"><h2>Fix a log</h2><label for="fd">Day</label><input id="fd" type="date" value="${d}" max="${today()}" onchange="fixDate(this.value)">
+  <p>Logged: <b>${fmtMin(S.logs[d]||0)}</b> (goal that day ${fmtMin(S.goalOn[d]||S.goal)})</p>
+  <label for="fm">Correct total minutes for this day</label><div class="row"><input id="fm" type="number" min="0" max="1440" value="${S.logs[d]||0}"><button class="btn sea" onclick="fixDay()">Save</button></div>
+  <p class="mut">Coins already awarded stay put. Use Add or Remove under Goals if they need adjusting.</p></div>`}
+
+function render(){const A=$('#app');
+  if(!AU||!S){const cr=ui.cr;
+    A.innerHTML=`<main><div class="card" style="margin-top:30px"><h1 style="font-size:2.4rem">👁️ iPatch</h1><p class="mut">${cr?'Make one login for the whole family.':'Welcome back!'}</p>
+    <label for="e">Email</label><input id="e" type="email" autocomplete="email"><label for="p">Password (6+ characters)</label><input id="p" type="password" autocomplete="${cr?'new-password':'current-password'}">
+    ${cr?`<label for="pin">Parent PIN (4 digits, opens Parent Mode)</label><input id="pin" type="password" inputmode="numeric" maxlength="4">
+    <label>Pick a character</label><div class="chars">${CH.map((c,i)=>`<button type="button" class="${c===ui.ch?'on':''}" onclick="pick(${i})" aria-label="Character ${c}">${c}</button>`).join('')}</div>`:''}
+    <p><button class="btn" onclick="doAuth(${!!cr})">${cr?'Start patching!':'Sign in'}</button></p>
+    <p><button class="link" onclick="ui.cr=${!cr};render()">${cr?'I already have a login':'Make a new family login'}</button></p></div>
+    <p class="note">Your progress syncs between devices. Follow your eye-care professional’s instructions.</p></main>`;return}
+  const kid=ui.mode==='kid',pend=S.reqs.filter(r=>r.st==='pending').length+pn().length;
+  const T=kid?[['home','🏠<small>Home</small>'],['timer','⏱<small>Timer</small>'],['cal','📅<small>Days</small>'],['shop','🎁<small>Shop</small>'],['lv','⭐<small>Rank</small>']]
+             :[['ov','📊 Overview'],['goals','🎯 Goals'],['rew','🎁 Rewards'],['req','✋ Approvals'],['fix','✏️ Fix log']];
+  const V={home:vHome,timer:vTimer,cal:()=>vCal()+chartCard(14,false),shop:vShop,lv:vLevels,ov:vOv,goals:vGoals,rew:vRew,req:vReq,fix:vFix};
+  A.innerHTML=`<header><div class="logo disp">${S.char} iPatch</div><span class="chip" id="cs">${ui.sy||'☁️'}</span>${kid?`<span class="chip">🪙 ${S.coins}</span><span class="chip">⭐ ${lvl(S.xp)}</span>`:'<span class="chip">Parent Mode</span>'}
+  <button class="btn sm" onclick="${kid?'openGate()':"setMode('kid')"}">${kid?'🔒 Parent':'👧 Kid view'}</button></header>
+  <nav class="${kid?'bnav':'tabs'}">${T.map(t=>`<button class="tab ${ui.tab===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}${t[0]==='req'&&pend?`<i>${pend}</i>`:''}</button>`).join('')}</nav>
+  <main class="${kid?'kid':''}">${V[ui.tab]()}<p class="note">iPatch tracks and motivates. It is not medical advice. Follow your eye-care professional’s instructions.<br><button class="link" onclick="signOut()">Sign out</button></p></main>
+  ${ui.gate?`<div class="modal"><div class="card"><h2>Parent PIN</h2><input id="gp" type="password" inputmode="numeric" maxlength="4" onkeydown="if(event.key==='Enter')tryGate()" aria-label="Parent PIN">
+  <div class="row" style="margin-top:12px"><button class="btn sea" onclick="tryGate()">Unlock</button><button class="btn ghost" onclick="ui.gate=false;render()">Cancel</button></div></div></div>`:''}`}
+
+setInterval(()=>{if(!S)return;const e=$('#tm'),r=$('#rf');if(e)e.textContent=fmtT(elapsed());if(r)r.style.strokeDashoffset=ringOff()},500);
+setInterval(()=>{if(AU&&S&&!document.hidden)sync()},20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
+boot();
+</script>
+</body>
+</html>
