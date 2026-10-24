@@ -93,6 +93,11 @@ details.card summary{cursor:pointer;font-size:1.2rem;list-style:none}
 .bnav .tab{min-width:0;border:0;background:transparent;color:#fff;font-size:1.7rem;padding:6px 2px;border-radius:14px}
 .bnav .tab small{display:block;font-size:.72rem;font-weight:800}.bnav .tab.on{background:var(--sun);color:var(--navy)}
 main.kid{padding-bottom:120px}.sec{margin:16px 0 4px}.cal .ok{font-size:1.4rem}
+body{background-image:radial-gradient(#ffffffaa 2px,transparent 2px);background-size:30px 30px}
+.hero-top{text-align:center;padding:26px 0 4px}
+.hero-title{font-size:3.6rem;color:#fff;-webkit-text-stroke:2px var(--navy);paint-order:stroke fill;text-shadow:0 5px 0 var(--navy)}
+.hero-emoji{font-size:2.6rem;display:flex;gap:18px;justify-content:center}.hero-emoji span{display:inline-block}.hero-sub{font-size:1.15rem;margin:6px 0 0}
+@media (min-width:900px){main{max-width:880px}.bnav{left:50%;right:auto;transform:translateX(-50%);width:640px;border-radius:24px 24px 0 0}.tiles .tile b{font-size:2.4rem}.hero-title{font-size:4.4rem}.card{padding:22px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -100,7 +105,7 @@ main.kid{padding-bottom:120px}.sec{margin:16px 0 4px}.cal .ok{font-size:1.4rem}
 <div id="app"></div><div id="toast"></div><canvas id="fx"></canvas>
 <script>
 const K='ipatch.v1',AK='ipatch.auth',SB='https://ecoquyulvydsczpjgoke.supabase.co',KEY='sb_publishable_hXSE8yJ55tyUOnMB2JpGhw_bXNIETvB';
-let AU=null,qt=0,busy=false,dirty=false;try{AU=JSON.parse(localStorage.getItem(AK)||'null')}catch(e){}
+let AU=null,qt=0,busy=false,dirty=false,DEV='',AC=null,mute=false;try{DEV=localStorage.getItem('ipatch.dev')||'';mute=localStorage.getItem('ipatch.mute')==='1'}catch(e){}try{AU=JSON.parse(localStorage.getItem(AK)||'null')}catch(e){}
 let S=null;try{S=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
 if(S&&!S.pending)S.pending=[];
 const ui={cr:!AU&&!S,sy:'',mode:'kid',tab:'home',gate:false,cm:new Date(),fd:null,ch:'🦊'};
@@ -121,7 +126,12 @@ const title=l=>TITLES[Math.min(l-1,TITLES.length-1)];
 const met=d=>(S.logs[d]||0)>0&&S.logs[d]>=(S.goalOn[d]||S.goal);
 function streak(){const d=new Date();if(!met(ds(d)))d.setDate(d.getDate()-1);let n=0;while(met(ds(d))){n++;d.setDate(d.getDate()-1)}return n}
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2800)}
-function boom(){const c=$('#fx'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
+function sfx(n){if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
+  const q={tap:[[660,0,.05]],coin:[[988,0,.07],[1319,.08,.16]],win:[[523,0,.12],[659,.12,.12],[784,.24,.12],[1047,.36,.3]],start:[[392,0,.08],[523,.09,.14]],done:[[784,0,.1],[988,.11,.1],[1175,.22,.2]]}[n]||[];
+  q.forEach(a=>{const o=AC.createOscillator(),g=AC.createGain(),T=AC.currentTime+a[1];o.type='triangle';o.frequency.value=a[0];o.connect(g);g.connect(AC.destination);
+    g.gain.setValueAtTime(.0001,T);g.gain.exponentialRampToValueAtTime(.18,T+.01);g.gain.exponentialRampToValueAtTime(.0001,T+a[2]);o.start(T);o.stop(T+a[2]+.02)})}catch(e){}}
+function toggleMute(){mute=!mute;try{localStorage.setItem('ipatch.mute',mute?'1':'0')}catch(e){}render();sfx('tap')}
+function boom(){sfx('win');try{navigator.vibrate&&navigator.vibrate([60,40,60])}catch(e){}const c=$('#fx'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;
   const cols=['#ffc531','#1aa7a1','#ff6a55','#14284b','#fff'];
   const p=Array.from({length:90},()=>({x:c.width/2,y:c.height/3,vx:(Math.random()-.5)*14,vy:-Math.random()*13-2,r:Math.random()*6+3,c:cols[Math.floor(Math.random()*5)]}));
   let f=0;(function go(){x.clearRect(0,0,c.width,c.height);p.forEach(q=>{q.x+=q.vx;q.y+=q.vy;q.vy+=.4;x.fillStyle=q.c;x.fillRect(q.x,q.y,q.r,q.r)});if(++f<80)requestAnimationFrame(go);else x.clearRect(0,0,c.width,c.height)})()}
@@ -152,14 +162,32 @@ async function api(path,o){o=o||{};const h=Object.assign({apikey:KEY,'Content-Ty
 async function doAuth(create){const e=$('#e').value.trim().toLowerCase(),p=$('#p').value,pin=create?$('#pin').value:'';
   if(!e.includes('@')||p.length<6||(create&&!/^\d{4}$/.test(pin))){toast(create?'Need an email, a password (6+ characters), and a 4-digit parent PIN':'Enter your email and password');return}
   toast('One moment…');
-  try{const r=await api(create?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{m:'POST',auth:false,b:{email:e,password:p}});
+  try{const r=await api(create?'/auth/v1/signup?redirect_to='+encodeURIComponent(location.origin+location.pathname):'/auth/v1/token?grant_type=password',{m:'POST',auth:false,b:create?{email:e,password:p,data:{pin:pin,char:ui.ch}}:{email:e,password:p}});
     if(!r.ok){toast((r.j&&(r.j.msg||r.j.error_description||r.j.message))||'That did not work');return}
-    if(!r.j.access_token){toast('Check your email to confirm it, then sign in');return}
+    if(!r.j.access_token){ui.msg='📧 Check your email and tap the link. It brings you back here signed in.';render();return}
     setAU(r.j);if(S&&S.uid&&S.uid!==AU.uid)S=null;
-    if(!S){S=fresh();if(create){S.pin=pin;S.char=ui.ch}else{S.setAt=0;S.rewards=[]}}
+    ui.msg='';if(!S){const md=(r.j.user&&r.j.user.user_metadata)||{};S=fresh();S.pin=md.pin||pin;S.char=md.char||ui.ch;S.setAt=1}
     S.uid=AU.uid;ui.mode='kid';ui.tab='home';save();await sync();render()}
   catch(x){toast('Can’t reach the internet. Try again.')}}
-async function signOut(){try{await sync()}catch(x){}AU=null;saveAU();S=null;try{localStorage.removeItem(K)}catch(e){}ui.mode='kid';ui.cr=false;render()}
+function setDev(r){DEV=r;try{localStorage.setItem('ipatch.dev',r)}catch(e){}ui.mode=r==='kid'?'kid':'parent';ui.tab=r==='kid'?'home':'ov';save();render()}
+function pickRole(r){if(!S.pin){const p=($('#wp')||{}).value||'';if(!/^\d{4}$/.test(p)){toast('Pick a 4-digit PIN first');return}S.pin=p;S.setAt=Date.now()}setDev(r)}
+function setChar(i){S.char=CH[i];S.setAt=Date.now();save();render()}
+const errm=r=>(r.j&&(r.j.msg||r.j.error_description||r.j.message))||'That did not work';
+async function chgPw(){const p=$('#npw').value;if(p.length<6){toast('Password needs 6+ characters');return}
+  const r=await api('/auth/v1/user',{m:'PUT',b:{password:p}});toast(r.ok?'Password changed ✅':errm(r))}
+async function chgEmail(){const e=$('#nem').value.trim().toLowerCase();if(!e.includes('@')){toast('Type the new email');return}
+  const r=await api('/auth/v1/user',{m:'PUT',b:{email:e}});if(r.ok){if(r.j&&r.j.email)AU.email=r.j.email;saveAU();toast('Email updated. If it asks, check your inbox to confirm.');render()}else toast(errm(r))}
+async function setNewPw(){const p=$('#npw').value;if(p.length<6){toast('Password needs 6+ characters');return}
+  const r=await api('/auth/v1/user',{m:'PUT',b:{password:p}});if(r.ok){ui.recover=false;toast('New password saved ✅');render()}else toast(errm(r))}
+async function forgot(){const e=$('#e').value.trim().toLowerCase();if(!e.includes('@')){toast('Type your email first');return}
+  const r=await api('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{m:'POST',auth:false,b:{email:e}});
+  ui.msg=r.ok?'📧 If that email has an account, a reset link is on its way.':'Could not send it. Try again in a minute.';render()}
+function acctCards(){return `<div class="card"><h3>This device</h3><p class="mut">Now: ${DEV==='kid'?'the kid’s device (opens straight to Kid Mode)':'a grown-up’s device'}</p>
+  <div class="row"><button class="btn sea sm" onclick="setDev('kid')">Make it the kid’s device</button><button class="btn ghost sm" onclick="setDev('parent')">Grown-up device</button></div></div>
+  <div class="card"><h3>Character</h3><div class="chars">${CH.map((c,i)=>`<button type="button" class="${c===S.char?'on':''}" onclick="setChar(${i})" aria-label="Character ${c}">${c}</button>`).join('')}</div></div>
+  <div class="card"><h3>Account</h3><p class="mut">${esc(AU.email)}</p><label for="nem">New email</label><div class="row"><input id="nem" type="email" autocomplete="email"><button class="btn sm" onclick="chgEmail()">Change</button></div>
+  <label for="npw">New password</label><div class="row"><input id="npw" type="password" autocomplete="new-password"><button class="btn sm" onclick="chgPw()">Change</button></div></div>`}
+async function signOut(){try{await sync()}catch(x){}AU=null;saveAU();S=null;DEV='';try{localStorage.removeItem('ipatch.dev')}catch(e){}try{localStorage.removeItem(K)}catch(e){}ui.mode='kid';ui.cr=false;render()}
 
 /* ---------- sync ---------- */
 const canon=v=>Array.isArray(v)?'['+v.map(canon).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}':JSON.stringify(v);
@@ -179,7 +207,6 @@ async function sync(){if(!AU||!S)return;if(busy){dirty=true;return}busy=true;
     if(!g.ok)throw new Error('get '+g.st);
     const row=g.j&&g.j[0],before=canon(snap());
     if(row)mergeIn(row.data||{});
-    if(!S.pin)S.pin='0000';
     const mine=snap(),changed=canon(mine)!==before;
     if(row&&canon(row.data)===canon(mine)){if(changed){save();rerender()}sy('☁️ synced');break}
     const body={data:mine,rev:(row?row.rev:0)+1},hd={Prefer:'return=representation'};
@@ -188,11 +215,22 @@ async function sync(){if(!AU||!S)return;if(busy){dirty=true;return}busy=true;
     if(n===2)throw new Error('conflict')}
   }catch(x){sy('⚠️ offline')}
   busy=false;if(dirty){dirty=false;sync()}}
-function boot(){
+async function fromLink(){const h=location.hash;
+  if(/error=/.test(h)){history.replaceState(null,'',location.pathname+location.search);ui.msg='That email link didn’t work. It may have expired. Try signing in, or sign up again.';return}
+  if(!/access_token=/.test(h))return;
+  const p=new URLSearchParams(h.slice(1));history.replaceState(null,'',location.pathname+location.search);
+  try{const at=p.get('access_token'),r=await fetch(SB+'/auth/v1/user',{headers:{apikey:KEY,Authorization:'Bearer '+at}});if(!r.ok)return;
+    const u=await r.json();setAU({access_token:at,refresh_token:p.get('refresh_token'),expires_in:+p.get('expires_in')||3600,user:u});
+    const md=u.user_metadata||{};if(S&&S.uid&&S.uid!==u.id)S=null;
+    if(!S){S=fresh();S.pin=md.pin||'';S.char=md.char||'🦊';S.setAt=1}
+    S.uid=u.id;derive();save();ui.msg='';ui.cr=false;if(p.get('type')==='recovery')ui.recover=true}catch(x){}}
+async function boot(){
   if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];
     if(!S.tx.length){Object.keys(S.logs||{}).forEach(d=>S.tx.push({id:uid(),k:'min',d:d,n:S.logs[d]}));if(S.coins)S.tx.push({id:uid(),k:'coin',n:S.coins,w:'migrate'})}
     S.pending.forEach(e=>{e.st=e.st||'new'});derive()}
+  await fromLink();
   if(AU&&!S){S=fresh();S.setAt=0;S.rewards=[];S.uid=AU.uid;derive()}
+  if(AU&&S&&DEV){ui.mode=DEV==='kid'?'kid':'parent';ui.tab=DEV==='kid'?'home':'ov'}
   render();sync()}
 
 function openGate(){ui.gate=true;render();setTimeout(()=>{const g=$('#gp');g&&g.focus()},50)}
@@ -203,17 +241,17 @@ function setTab(t){ui.tab=t;render()}
 /* ---------- kid actions ---------- */
 function addCustom(){const v=parseInt($('#am').value,10);if(!(v>=1&&v<=600)){toast('Type minutes between 1 and 600');return}submit(v)}
 const elapsed=()=>S.timer.acc+(S.timer.run?Date.now()-S.timer.start:0);
-function tToggle(){const t=S.timer;if(t.run){t.acc+=Date.now()-t.start;t.run=false}else{t.start=Date.now();t.run=true}save();render()}
+function tToggle(){const t=S.timer;if(t.run){t.acc+=Date.now()-t.start;t.run=false}else{t.start=Date.now();t.run=true;sfx('start')}save();render()}
 function tFinish(){const ms=elapsed();
   if(ms<10000){toast('Patch a little longer first. Under 10 seconds can’t count.');return}
   const mins=Math.max(1,Math.round(ms/60000));S.timer={run:false,start:0,acc:0};save();submit(mins,'timer')}
-function submit(m,src){S.pending.unshift({id:nid(),m:m,d:today(),src:src||'manual',st:'new'});save();toast('Sent! A grown-up will check it ⏳');render()}
+function submit(m,src){S.pending.unshift({id:nid(),m:m,d:today(),src:src||'manual',st:'new'});save();sfx('done');toast('Sent! A grown-up will check it ⏳');render()}
 function okTime(id,ok){const i=S.pending.findIndex(x=>x.id===id);if(i<0||S.pending[i].st==='done')return;const e=S.pending[i];
   const v=ok?parseInt($('#pm'+id).value,10):0;e.st='done';save();
-  if(ok&&v>0)addMin(v,e.d);else render()}
+  if(ok&&v>0){sfx('coin');addMin(v,e.d)}else render()}
 function tDiscard(){if(confirm('Throw away this timer without logging it?')){S.timer={run:false,start:0,acc:0};save();render()}}
 function ask(id){const r=S.rewards.find(x=>x.id===id);if(!r||S.coins<r.price)return;
-  coin(-r.price,'hold');S.reqs.unshift({id:nid(),name:r.name,price:r.price,st:'pending',t:today()});save();toast('Asked! A grown-up will check it 🎁');render()}
+  coin(-r.price,'hold');S.reqs.unshift({id:nid(),name:r.name,price:r.price,st:'pending',t:today()});save();sfx('coin');toast('Asked! A grown-up will check it 🎁');render()}
 function cal(n){ui.cm=new Date(ui.cm.getFullYear(),ui.cm.getMonth()+n,1);render()}
 
 /* ---------- parent actions ---------- */
@@ -304,7 +342,7 @@ function vGoals(){const h=Math.floor(S.goal/60),m=S.goal%60;
   <label for="gc">Coins earned for meeting the goal</label><input id="gc" type="number" min="0" value="${S.cpg}">
   <p><button class="btn sea" onclick="saveGoal()">Save goal</button></p></div>
   <div class="card"><h3>Coin balance: 🪙 ${S.coins}</h3><div class="row"><input id="ac" type="number" min="1" placeholder="coins"><button class="btn sea" onclick="adj(1)">Add</button><button class="btn red" onclick="adj(-1)">Remove</button></div></div>
-  <div class="card"><h3>Parent PIN</h3><div class="row"><input id="np" type="password" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN"><button class="btn" onclick="newPin()">Change</button></div></div>`}
+  ${acctCards()}<div class="card"><h3>Parent PIN</h3><div class="row"><input id="np" type="password" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN"><button class="btn" onclick="newPin()">Change</button></div></div>`}
 
 function vRew(){return `<div class="card"><h2>Rewards</h2>`+(rws().length?rws().map(r=>`<div class="item"><div><h3>${esc(r.name)}</h3><p class="mut">${esc(r.desc)}</p></div>
   <div style="text-align:right"><div class="price">🪙 ${r.price}</div><button class="btn red sm" style="margin-top:6px" onclick="delReward(${r.id})">Delete</button></div></div>`).join(''):'<p class="mut">No rewards yet.</p>')+`</div>
@@ -323,28 +361,37 @@ function vFix(){const d=ui.fd||today();
   <label for="fm">Correct total minutes for this day</label><div class="row"><input id="fm" type="number" min="0" max="1440" value="${S.logs[d]||0}"><button class="btn sea" onclick="fixDay()">Save</button></div>
   <p class="mut">Coins already awarded stay put. Use Add or Remove under Goals if they need adjusting.</p></div>`}
 
+const hero=()=>`<div class="hero-top"><div class="disp hero-title">iPatch</div><div class="hero-emoji"><span class="bob">⛵</span><span>🏝️</span><span class="bob" style="animation-delay:.3s">🧰</span></div><p class="hero-sub">Patch time is treasure time!</p></div>`;
 function render(){const A=$('#app');
-  if(!AU||!S){const cr=ui.cr;
-    A.innerHTML=`<main><div class="card" style="margin-top:30px"><h1 style="font-size:2.4rem">👁️ iPatch</h1><p class="mut">${cr?'Make one login for the whole family.':'Welcome back!'}</p>
-    <label for="e">Email</label><input id="e" type="email" autocomplete="email"><label for="p">Password (6+ characters)</label><input id="p" type="password" autocomplete="${cr?'new-password':'current-password'}">
-    ${cr?`<label for="pin">Parent PIN (4 digits, opens Parent Mode)</label><input id="pin" type="password" inputmode="numeric" maxlength="4">
+  if(AU&&S&&ui.recover){A.innerHTML=`<main>${hero()}<div class="card"><h2>Choose a new password</h2><label for="npw">New password (6+ characters)</label>
+    <input id="npw" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')setNewPw()"><p><button class="btn go" onclick="setNewPw()">Save password</button></p></div></main>`;return}
+  if(!AU||!S){const cr=ui.cr,en=`onkeydown="if(event.key==='Enter')doAuth(${!!cr})"`;
+    A.innerHTML=`<main>${hero()}<div class="card"><div class="row" style="margin-bottom:8px"><button class="btn sm ${cr?'ghost':'sea'}" onclick="ui.cr=false;render()">Grown-up sign in</button><button class="btn sm ${cr?'sea':'ghost'}" onclick="ui.cr=true;render()">New family</button></div>
+    ${ui.msg?`<p style="background:#fff0b3;border-radius:14px;padding:10px">${ui.msg}</p>`:''}
+    <label for="e">Email</label><input id="e" type="email" autocomplete="email" ${en}><label for="p">Password (6+ characters)</label><input id="p" type="password" autocomplete="${cr?'new-password':'current-password'}" ${en}>
+    ${cr?`<label for="pin">Parent PIN (4 digits)</label><input id="pin" type="password" inputmode="numeric" maxlength="4" ${en}>
     <label>Pick a character</label><div class="chars">${CH.map((c,i)=>`<button type="button" class="${c===ui.ch?'on':''}" onclick="pick(${i})" aria-label="Character ${c}">${c}</button>`).join('')}</div>`:''}
-    <p><button class="btn" onclick="doAuth(${!!cr})">${cr?'Start patching!':'Sign in'}</button></p>
-    <p><button class="link" onclick="ui.cr=${!cr};render()">${cr?'I already have a login':'Make a new family login'}</button></p></div>
-    <p class="note">Your progress syncs between devices. Follow your eye-care professional’s instructions.</p></main>`;return}
+    <p><button class="btn go" onclick="doAuth(${!!cr})">${cr?'Start patching!':'Sign in'}</button></p>
+    ${cr?'':'<p style="text-align:center"><button class="link" onclick="forgot()">Forgot password?</button></p>'}</div>
+    <p class="note">Kids don’t need a password. A grown-up signs in once on the kid’s device and sets it up.</p></main>`;return}
+  if(!DEV){A.innerHTML=`<main>${hero()}<div class="card"><h2>Who is this device for?</h2>
+    ${S.pin?'':'<p class="mut">First pick a 4-digit PIN. It unlocks Parent Mode.</p><input id="wp" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN" onkeydown="if(event.key===\'Enter\')pickRole(\'parent\')">'}
+    <button class="btn go" onclick="pickRole('kid')">👧 The kid’s device</button><button class="btn sea" style="width:100%;margin-top:12px;font-size:1.2rem" onclick="pickRole('parent')">🔒 A grown-up’s device</button>
+    <p class="mut">A kid’s device opens straight to Kid Mode and needs the PIN to leave it.</p></div></main>`;return}
   const kid=ui.mode==='kid',pend=S.reqs.filter(r=>r.st==='pending').length+pn().length;
   const T=kid?[['home','🏠<small>Home</small>'],['timer','⏱<small>Timer</small>'],['cal','📅<small>Days</small>'],['shop','🎁<small>Shop</small>'],['lv','⭐<small>Rank</small>']]
              :[['ov','📊 Overview'],['goals','🎯 Goals'],['rew','🎁 Rewards'],['req','✋ Approvals'],['fix','✏️ Fix log']];
   const V={home:vHome,timer:vTimer,cal:()=>vCal()+chartCard(14,false),shop:vShop,lv:vLevels,ov:vOv,goals:vGoals,rew:vRew,req:vReq,fix:vFix};
   A.innerHTML=`<header><div class="logo disp">${S.char} iPatch</div><span class="chip" id="cs">${ui.sy||'☁️'}</span>${kid?`<span class="chip">🪙 ${S.coins}</span><span class="chip">⭐ ${lvl(S.xp)}</span>`:'<span class="chip">Parent Mode</span>'}
-  <button class="btn sm" onclick="${kid?'openGate()':"setMode('kid')"}">${kid?'🔒 Parent':'👧 Kid view'}</button></header>
+  <button class="chip" style="border:0;color:#fff;cursor:pointer;font:inherit" onclick="toggleMute()" aria-label="Sound on or off">${mute?'🔇':'🔊'}</button><button class="btn sm" onclick="${kid?'openGate()':"setMode('kid')"}">${kid?'🔒 Parent':'👧 Kid view'}</button></header>
   <nav class="${kid?'bnav':'tabs'}">${T.map(t=>`<button class="tab ${ui.tab===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}${t[0]==='req'&&pend?`<i>${pend}</i>`:''}</button>`).join('')}</nav>
-  <main class="${kid?'kid':''}">${V[ui.tab]()}<p class="note">iPatch tracks and motivates. It is not medical advice. Follow your eye-care professional’s instructions.<br><button class="link" onclick="signOut()">Sign out</button></p></main>
+  <main class="${kid?'kid':''}">${V[ui.tab]()}<p class="note">iPatch tracks and motivates. It is not medical advice. Follow your eye-care professional’s instructions.${kid?'':'<br><button class="link" onclick="signOut()">Sign out</button>'}</p></main>
   ${ui.gate?`<div class="modal"><div class="card"><h2>Parent PIN</h2><input id="gp" type="password" inputmode="numeric" maxlength="4" onkeydown="if(event.key==='Enter')tryGate()" aria-label="Parent PIN">
   <div class="row" style="margin-top:12px"><button class="btn sea" onclick="tryGate()">Unlock</button><button class="btn ghost" onclick="ui.gate=false;render()">Cancel</button></div></div></div>`:''}`}
 
 setInterval(()=>{if(!S)return;const e=$('#tm'),r=$('#rf');if(e)e.textContent=fmtT(elapsed());if(r)r.style.strokeDashoffset=ringOff()},500);
 setInterval(()=>{if(AU&&S&&!document.hidden)sync()},20000);
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button'))sfx('tap')});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 boot();
 </script>
