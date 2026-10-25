@@ -98,6 +98,15 @@ body{background-image:radial-gradient(#ffffffaa 2px,transparent 2px);background-
 .hero-title{font-size:3.6rem;color:#fff;-webkit-text-stroke:2px var(--navy);paint-order:stroke fill;text-shadow:0 5px 0 var(--navy)}
 .hero-emoji{font-size:2.6rem;display:flex;gap:18px;justify-content:center}.hero-emoji span{display:inline-block}.hero-sub{font-size:1.15rem;margin:6px 0 0}
 @media (min-width:900px){main{max-width:880px}.bnav{left:50%;right:auto;transform:translateX(-50%);width:640px;border-radius:24px 24px 0 0}.tiles .tile b{font-size:2.4rem}.hero-title{font-size:4.4rem}.card{padding:22px}}
+select{font:inherit;font-weight:700;border:3px solid var(--navy);border-radius:12px;padding:10px 12px;width:100%;background:#fff;color:var(--navy)}
+body[data-theme=candy]{--sand:#ffd6ec;--navy:#4a1d6b;--sea:#ff5fa8;--sun:#ffd23f;--coral:#7b5cff}
+body[data-theme=forest]{--sand:#d8f2c8;--navy:#1d3b2a;--sea:#2e9e5b;--sun:#ffc531;--coral:#e8643c}
+body[data-theme=sunset]{--sand:#ffe0c2;--navy:#5a1f2f;--sea:#e8590c;--sun:#ffd43b;--coral:#d6336c}
+body[data-theme=space]{--sand:#c9c7ff;--navy:#1a1442;--sea:#6c5ce7;--sun:#fdcb6e;--coral:#fd79a8}
+.rw{position:relative}.tag{position:absolute;top:10px;right:10px;background:var(--sun);border-radius:12px;padding:2px 10px;font-size:.75rem}
+.got h3,.got .mut,.got .ic{text-decoration:line-through;opacity:.5}
+.gboard{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:320px;margin:10px auto}
+.gcell{aspect-ratio:1;border:3px solid var(--navy);border-radius:20px;background:#fff;font-size:2.6rem;cursor:pointer;box-shadow:0 4px 0 var(--navy)}.gcell:active{transform:translateY(3px)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -105,7 +114,7 @@ body{background-image:radial-gradient(#ffffffaa 2px,transparent 2px);background-
 <div id="app"></div><div id="toast"></div><canvas id="fx"></canvas>
 <script>
 const K='ipatch.v1',AK='ipatch.auth',SB='https://ecoquyulvydsczpjgoke.supabase.co',KEY='sb_publishable_hXSE8yJ55tyUOnMB2JpGhw_bXNIETvB';
-let AU=null,qt=0,busy=false,dirty=false,DEV='',AC=null,mute=false;try{DEV=localStorage.getItem('ipatch.dev')||'';mute=localStorage.getItem('ipatch.mute')==='1'}catch(e){}try{AU=JSON.parse(localStorage.getItem(AK)||'null')}catch(e){}
+let AU=null,qt=0,busy=false,dirty=false,DEV='',AC=null,mute=false,THEME='ocean';try{DEV=localStorage.getItem('ipatch.dev')||'';mute=localStorage.getItem('ipatch.mute')==='1';THEME=localStorage.getItem('ipatch.theme')||'ocean'}catch(e){}try{AU=JSON.parse(localStorage.getItem(AK)||'null')}catch(e){}
 let S=null;try{S=JSON.parse(localStorage.getItem(K)||'null')}catch(e){}
 if(S&&!S.pending)S.pending=[];
 const ui={cr:!AU&&!S,sy:'',mode:'kid',tab:'home',gate:false,cm:new Date(),fd:null,ch:'🦊'};
@@ -117,7 +126,7 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(AU){c
 const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=()=>ds(new Date());
 const fmtMin=m=>{const h=Math.floor(m/60),r=m%60;return h?(h+'h'+(r?' '+r+'m':'')):r+'m'};
-const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
+const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,cpl:5,gp:3,gc:3,own:[],setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
   rewards:[{id:1,name:'Extra bedtime story',desc:'One more chapter!',price:15,ic:'📖'}],reqs:[],pending:[],timer:{run:false,start:0,acc:0}});
 const nid=()=>Date.now()*10+Math.floor(Math.random()*10),uid=()=>Date.now()+'-'+Math.random().toString(36).slice(2,7);
 const pn=()=>S.pending.filter(e=>e.st!=='done'),rws=()=>S.rewards.filter(r=>!r.del);
@@ -144,9 +153,9 @@ function addMin(m,d){d=d||today();const L0=lvl(S.xp);
   if(m)S.tx.push({id:uid(),k:'min',d:d,n:m});S.goalOn[d]=S.goalOn[d]||S.goal;derive();
   let won=false;
   if((S.logs[d]||0)>=S.goalOn[d]&&!S.awarded[d]){S.awarded[d]=1;S.tx.push({id:uid(),k:'coin',n:S.cpg,w:'goal'});derive();won=true}
-  save();
+  for(let l=L0+1;l<=lvl(S.xp);l++){const id='lv-'+l;if(!S.tx.some(x=>x.id===id))S.tx.push({id:id,k:'coin',n:S.cpl||0,w:'level'})}derive();save();
   if(won&&d===today()){toast('Goal complete! +'+S.cpg+' coins 🪙');boom()}
-  else if(lvl(S.xp)>L0){toast('Level up! You are now a '+title(lvl(S.xp))+' ⚓');boom()}
+  else if(lvl(S.xp)>L0){toast('Level up! You are now a '+title(lvl(S.xp))+' ⚓'+(S.cpl?' +'+S.cpl+' 🪙':''));boom()}
   render();}
 
 /* ---------- auth ---------- */
@@ -182,7 +191,7 @@ async function setNewPw(){const p=$('#npw').value;if(p.length<6){toast('Password
 async function forgot(){const e=$('#e').value.trim().toLowerCase();if(!e.includes('@')){toast('Type your email first');return}
   const r=await api('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{m:'POST',auth:false,b:{email:e}});
   ui.msg=r.ok?'📧 If that email has an account, a reset link is on its way.':'Could not send it. Try again in a minute.';render()}
-function acctCards(){return `<div class="card"><h3>This device</h3><p class="mut">Now: ${DEV==='kid'?'the kid’s device (opens straight to Kid Mode)':'a grown-up’s device'}</p>
+function acctCards(){return funCard()+`<div class="card"><h3>This device</h3><p class="mut">Now: ${DEV==='kid'?'the kid’s device (opens straight to Kid Mode)':'a grown-up’s device'}</p>
   <div class="row"><button class="btn sea sm" onclick="setDev('kid')">Make it the kid’s device</button><button class="btn ghost sm" onclick="setDev('parent')">Grown-up device</button></div></div>
   <div class="card"><h3>Character</h3><div class="chars">${CH.map((c,i)=>`<button type="button" class="${c===S.char?'on':''}" onclick="setChar(${i})" aria-label="Character ${c}">${c}</button>`).join('')}</div></div>
   <div class="card"><h3>Account</h3><p class="mut">${esc(AU.email)}</p><label for="nem">New email</label><div class="row"><input id="nem" type="email" autocomplete="email"><button class="btn sm" onclick="chgEmail()">Change</button></div>
@@ -191,13 +200,14 @@ async function signOut(){try{await sync()}catch(x){}AU=null;saveAU();S=null;DEV=
 
 /* ---------- sync ---------- */
 const canon=v=>Array.isArray(v)?'['+v.map(canon).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}':JSON.stringify(v);
+const RK={pending:0,denied:1,approved:2,used:3};
 const byId=a=>a.slice().sort((x,y)=>String(x.id)<String(y.id)?-1:1);
-const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
+const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,cpl:S.cpl,gp:S.gp,gc:S.gc,own:S.own.slice().sort(),setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
 function uni(x,y,f){const m=new Map();(x||[]).concat(y||[]).forEach(e=>{const o=m.get(e.id);m.set(e.id,o?f(o,e):e)});return Array.from(m.values())}
 function mergeIn(r){
-  if((r.setAt||0)>(S.setAt||0)){['pin','char','goal','cpg','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
+  if((r.setAt||0)>=(S.setAt||0)){['pin','char','goal','cpg','cpl','gp','gc','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
   S.tx=uni(S.tx,r.tx,o=>o);S.pending=uni(S.pending,r.pending,(o,e)=>o.st==='done'?o:e);
-  S.rewards=uni(S.rewards,r.rewards,(o,e)=>o.del?o:e);S.reqs=uni(S.reqs,r.reqs,(o,e)=>o.st!=='pending'?o:e);
+  S.rewards=uni(S.rewards,r.rewards,(o,e)=>o.del?o:e);S.reqs=uni(S.reqs,r.reqs,(o,e)=>(RK[e.st]||0)>(RK[o.st]||0)?e:o);S.own=Array.from(new Set((S.own||[]).concat(r.own||[])));
   S.awarded=Object.assign({},r.awarded,S.awarded);S.goalOn=Object.assign({},r.goalOn,S.goalOn);derive()}
 function sy(t){ui.sy=t;const e=$('#cs');if(e)e.textContent=t}
 function rerender(){const a=document.activeElement;if(!(a&&a.tagName==='INPUT'))render()}
@@ -225,7 +235,7 @@ async function fromLink(){const h=location.hash;
     if(!S){S=fresh();S.pin=md.pin||'';S.char=md.char||'🦊';S.setAt=1}
     S.uid=u.id;derive();save();ui.msg='';ui.cr=false;if(p.get('type')==='recovery')ui.recover=true}catch(x){}}
 async function boot(){
-  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];
+  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];if(S.cpl==null)S.cpl=5;if(S.gp==null)S.gp=3;if(S.gc==null)S.gc=3;S.own=S.own||[];
     if(!S.tx.length){Object.keys(S.logs||{}).forEach(d=>S.tx.push({id:uid(),k:'min',d:d,n:S.logs[d]}));if(S.coins)S.tx.push({id:uid(),k:'coin',n:S.coins,w:'migrate'})}
     S.pending.forEach(e=>{e.st=e.st||'new'});derive()}
   await fromLink();
@@ -236,7 +246,39 @@ async function boot(){
 function openGate(){ui.gate=true;render();setTimeout(()=>{const g=$('#gp');g&&g.focus()},50)}
 function tryGate(){if($('#gp').value===S.pin){ui.gate=false;ui.mode='parent';ui.tab='ov';render()}else{toast('Wrong PIN');$('#gp').value=''}}
 function setMode(m){ui.mode=m;ui.tab=m==='kid'?'home':'ov';render()}
-function setTab(t){ui.tab=t;render()}
+function setTab(t){if(G.on&&t!=='play')gEnd();ui.tab=t;render()}
+
+/* ---------- game ---------- */
+const G={on:false,sc:0,t:0,c:-1,iv:0,tm:0,res:null};
+const playsToday=()=>S.tx.filter(t=>t.w==='game'&&t.d===today()).length;
+const gBoard=()=>Array.from({length:9},(_,i)=>`<button class="gcell" onclick="gTap(${i})" aria-label="Tile ${i+1}">${i===G.c?'🪙':''}</button>`).join('');
+function gDraw(){const m=$('#gm'),x=$('#gs');if(m)m.innerHTML=gBoard();if(x)x.textContent='⏱ '+G.t+'s · ⭐ '+G.sc}
+function gMove(){let c;do{c=Math.floor(Math.random()*9)}while(c===G.c);G.c=c;gDraw()}
+function gStart(){if(G.on)return;if(!S.gp||playsToday()>=S.gp){toast('No plays left today');return}
+  G.on=true;G.sc=0;G.t=20;G.res=null;sfx('start');G.iv=setInterval(gMove,900);G.tm=setInterval(()=>{G.t--;if(G.t<=0)gEnd();else gDraw()},1000);render();gMove()}
+function gTap(i){if(!G.on||i!==G.c)return;G.sc++;sfx('coin');clearInterval(G.iv);gMove();G.iv=setInterval(gMove,Math.max(450,900-G.sc*25))}
+function gEnd(){clearInterval(G.iv);clearInterval(G.tm);if(!G.on)return;G.on=false;G.c=-1;const n=Math.min(S.gc||0,Math.floor(G.sc/5));
+  S.tx.push({id:uid(),k:'coin',n:n,w:'game',d:today()});derive();save();G.res={sc:G.sc,n:n};sfx(n?'win':'done');if(n)boom();render()}
+function vPlay(){if(!S.gp)return '<div class="card"><h2>🎮 Treasure Tap</h2><p>Games are off right now. Ask a grown-up!</p></div>';
+  const left=Math.max(0,S.gp-playsToday());
+  return `<div class="card" style="text-align:center"><h2>🎮 Treasure Tap</h2><p class="mut">Tap the 🪙 as fast as you can for 20 seconds! Every 5 taps = 1 coin (up to ${S.gc} a game).</p>
+  <p class="big" id="gs">${G.on?'⏱ '+G.t+'s · ⭐ '+G.sc:''}</p><div id="gm" class="gboard">${G.on?gBoard():''}</div>
+  ${G.res&&!G.on?`<p class="big">${G.res.sc} taps! +${G.res.n} 🪙</p>`:''}
+  ${G.on?'':`<p class="mut">${left} play${left===1?'':'s'} left today</p><button class="btn go" ${left?'':'disabled'} onclick="gStart()">▶ Play</button>`}</div>`}
+
+/* ---------- daily chest, saving-for ---------- */
+function chestBtn(){const t=today(),done=S.tx.some(x=>x.id==='chest-'+t);
+  return met(t)?(done?'<p class="mut">🎁 Daily chest opened. See you tomorrow!</p>':'<button class="btn" style="width:100%;margin-top:10px;font-size:1.2rem" onclick="openChest()">🎁 Open today’s chest!</button>'):''}
+function openChest(){const t=today();if(!met(t)||S.tx.some(x=>x.id==='chest-'+t))return;const n=1+Math.floor(Math.random()*4)+(streak()>=3?2:0);
+  S.tx.push({id:'chest-'+t,k:'coin',n:n,w:'chest'});derive();save();sfx('win');boom();toast('Daily chest: +'+n+' coins! 🪙');render()}
+function saving(){const r=rws().filter(x=>!isGot(x)&&x.price>S.coins).sort((a,b)=>a.price-b.price)[0];if(!r)return '';
+  return `<div class="card"><h3>🎯 Saving for ${esc(r.ic||'🎁')} ${esc(r.name)}</h3><div class="meter"><i style="width:${Math.round(S.coins/r.price*100)}%"></i></div><p class="mut">${S.coins} of ${r.price} coins</p></div>`}
+function okAll(){pn().slice().forEach(e=>{e.st='done';addMin(e.m,e.d)})}
+function funCard(){return `<div class="card"><h3>Fun &amp; rewards</h3><label for="lc">Coins for each new level</label><input id="lc" type="number" min="0" value="${S.cpl}">
+  <label for="gpx">Game plays per day (0 turns the game off)</label><input id="gpx" type="number" min="0" max="20" value="${S.gp}">
+  <label for="gcx">Most coins one game can give</label><input id="gcx" type="number" min="0" max="50" value="${S.gc}"><p><button class="btn sea" onclick="saveFun()">Save</button></p></div>`}
+function saveFun(){const a=parseInt($('#lc').value,10),b=parseInt($('#gpx').value,10),c=parseInt($('#gcx').value,10);
+  if(!(a>=0&&b>=0&&c>=0)){toast('Use numbers 0 or more');return}S.cpl=a;S.gp=b;S.gc=c;S.setAt=Date.now();save();toast('Saved');render()}
 
 /* ---------- kid actions ---------- */
 function addCustom(){const v=parseInt($('#am').value,10);if(!(v>=1&&v<=600)){toast('Type minutes between 1 and 600');return}submit(v)}
@@ -250,8 +292,8 @@ function okTime(id,ok){const i=S.pending.findIndex(x=>x.id===id);if(i<0||S.pendi
   const v=ok?parseInt($('#pm'+id).value,10):0;e.st='done';save();
   if(ok&&v>0){sfx('coin');addMin(v,e.d)}else render()}
 function tDiscard(){if(confirm('Throw away this timer without logging it?')){S.timer={run:false,start:0,acc:0};save();render()}}
-function ask(id){const r=S.rewards.find(x=>x.id===id);if(!r||S.coins<r.price)return;
-  coin(-r.price,'hold');S.reqs.unshift({id:nid(),name:r.name,price:r.price,st:'pending',t:today()});save();sfx('coin');toast('Asked! A grown-up will check it 🎁');render()}
+function ask(id){const r=S.rewards.find(x=>x.id===id);if(!r||S.coins<r.price||isWait(r)||isGot(r))return;
+  coin(-r.price,'hold');S.reqs.unshift({id:nid(),rid:r.id,name:r.name,price:r.price,st:'pending',t:today()});save();sfx('coin');toast('Asked! A grown-up will check it 🎁');render()}
 function cal(n){ui.cm=new Date(ui.cm.getFullYear(),ui.cm.getMonth()+n,1);render()}
 
 /* ---------- parent actions ---------- */
@@ -262,7 +304,7 @@ function adj(sign){const v=parseInt($('#ac').value,10);if(!(v>0))return;coin(sig
 function newPin(){const p=$('#np').value;if(!/^\d{4}$/.test(p)){toast('PIN must be 4 digits');return}S.pin=p;S.setAt=Date.now();save();toast('PIN changed')}
 function addReward(){const n=$('#rn').value.trim(),d=$('#rd').value.trim(),p=parseInt($('#rp').value,10);
   if(!n||!(p>=1)){toast('A reward needs a name and a coin price');return}
-  S.rewards.push({id:nid(),name:n,desc:d,price:p,ic:Array.from($('#ri').value.trim())[0]||'🎁'});save();render()}
+  S.rewards.push({id:nid(),name:n,desc:d,price:p,kind:$('#rk').value,ic:Array.from($('#ri').value.trim())[0]||'🎁'});save();render()}
 function delReward(id){if(confirm('Delete this reward?')){const r=S.rewards.find(x=>x.id===id);if(r)r.del=1;save();render()}}
 function resolve(id,ok){const r=S.reqs.find(x=>x.id===id);if(!r)return;r.st=ok?'approved':'denied';if(!ok)coin(r.price,'refund');save();render()}
 function fixDay(){const v=parseInt($('#fm').value,10);if(!(v>=0&&v<=1440)){toast('Enter minutes from 0 to 1440');return}
@@ -290,7 +332,7 @@ function chart(n){const days=[],d=new Date();for(let i=n-1;i>=0;i--){const x=new
   <text x="${L-5}" y="${y(S.goal)+4}" text-anchor="end" style="font:800 11px Nunito,sans-serif;fill:var(--coral)">goal</text>${bars}</svg>
   <p class="mut">Average ${avg} min a day · goal met on ${hit} of ${n} days · yellow bars hit the goal</p>`}
 function chartCard(n,tg){return `<div class="card"><h3>${tg?'Minutes per day':'Your last '+n+' days'}</h3>${tg?`<div class="row" style="margin:8px 0">${[7,14,30].map(r=>`<button class="btn sm ${r===n?'sea':'ghost'}" onclick="ui.range=${r};render()">${r} days</button>`).join('')}</div>`:''}${chart(n)}</div>`}
-function timeCard(){return `<div class="card"><h2>Time to approve</h2>`+(pn().length?pn().map(e=>`<div class="item"><div><h3>${e.src==='timer'?'⏱ Timer':'✍️ Typed in'} · ${e.d===today()?'today':e.d}</h3><p class="mut">Change the minutes if needed</p></div>
+function timeCard(){return `<div class="card"><h2>Time to approve</h2>${pn().length>1?`<p><button class="btn sea sm" onclick="okAll()">Approve all</button></p>`:''}`+(pn().length?pn().map(e=>`<div class="item"><div><h3>${e.src==='timer'?'⏱ Timer':'✍️ Typed in'} · ${e.d===today()?'today':e.d}</h3><p class="mut">Change the minutes if needed</p></div>
   <div class="row"><input id="pm${e.id}" type="number" min="1" max="600" value="${e.m}" aria-label="Minutes"><button class="btn sea sm" onclick="okTime(${e.id},true)">Approve</button><button class="btn red sm" onclick="okTime(${e.id},false)">Deny</button></div></div>`).join(''):'<p class="mut">Nothing waiting.</p>')+'<p class="mut">Time only counts toward goals, coins and XP after you approve it.</p></div>'}
 function quest(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0,p=Math.min(1,m/g);
   const st=Array.from({length:9},(_,i)=>`<span class="stone ${p>0&&i/8<=p?'on':''}"></span>`).join('');
@@ -298,9 +340,9 @@ function quest(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0,p=Math.m
 function vHome(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0;
   return `<div class="card hero-card"><h2>Ahoy, ${title(lvl(S.xp))}!</h2>${quest()}<p class="big">${Math.min(m,g)} of ${g} minutes</p>
   <p class="mut">${m>=g?'You did it! The treasure is yours! 🎉':(g-m)+' more minutes to open the treasure!'}</p>
-  ${pw()}<button class="btn go" onclick="setTab('timer')">▶ Start patch time</button></div>
+  ${chestBtn()}${pw()}<button class="btn go" onclick="setTab('timer')">▶ Start patch time</button></div>
   <div class="tiles"><div class="tile t1"><b>🔥 ${streak()}</b>day streak</div><div class="tile t2"><b>🪙 ${S.coins}</b>coins</div><div class="tile t3"><b>⭐ ${lvl(S.xp)}</b>level</div></div>
-  <details class="card"><summary class="disp">Already patched? Add time (a grown-up checks it)</summary><div class="row" style="margin-top:10px"><button class="btn sea" onclick="submit(10)">+10</button><button class="btn sea" onclick="submit(15)">+15</button><button class="btn sea" onclick="submit(30)">+30</button></div>
+  ${saving()}<details class="card"><summary class="disp">Already patched? Add time (a grown-up checks it)</summary><div class="row" style="margin-top:10px"><button class="btn sea" onclick="submit(10)">+10</button><button class="btn sea" onclick="submit(15)">+15</button><button class="btn sea" onclick="submit(30)">+30</button></div>
   <label for="am">Or type minutes</label><div class="row"><input id="am" type="number" inputmode="numeric" min="1" max="600" placeholder="minutes"><button class="btn" onclick="addCustom()">Add</button></div></details>`}
 function ringOff(){const g=S.goalOn[today()]||S.goal,p=Math.min(1,((S.logs[today()]||0)+elapsed()/60000)/g);return 553*(1-p)}
 function vTimer(){const t=S.timer,idle=!t.run&&t.acc===0;
@@ -323,15 +365,36 @@ function vCal(){const y=ui.cm.getFullYear(),m=ui.cm.getMonth(),first=new Date(y,
   <div class="stats"><div class="stat"><b>${done}</b><span>days completed</span></div><div class="stat"><b>🔥 ${streak()}</b><span>current streak</span></div><div class="stat"><b>${Object.values(S.logs).reduce((a,b)=>a+b,0)}</b><span>total minutes</span></div></div>`}
 
 function reqList(){const l=S.reqs.slice(0,8);if(!l.length)return '';
-  return `<div class="card"><h3>My requests</h3>`+l.map(r=>`<div class="item"><span>${esc(r.name)}</span><span class="price">${r.st==='pending'?'⏳ waiting':r.st==='approved'?'✅ yes!':'↩ coins back'}</span></div>`).join('')+'</div>'}
+  return `<div class="card"><h3>My requests</h3>`+l.map(r=>`<div class="item"><span>${esc(r.name)}</span><span class="price">${r.st==='denied'?'↩ coins back':r.st==='pending'?'⏳ waiting':'✅ yes!'}</span></div>`).join('')+'</div>'}
 const BADGES=['🧢','⚓','🔭','🧭','🦜','🏴‍☠️','👑','🌊'];
-function vShop(){return `<h2 class="sec">🎁 Reward shop</h2><div class="tile t2 wide">You have <b>🪙 ${S.coins}</b>coins</div>`+
-  (rws().length?'<div class="grid">'+rws().map(r=>{const can=S.coins>=r.price,p=Math.min(100,Math.round(S.coins/r.price*100));
-  return `<div class="card rw"><div class="ic">${esc(r.ic||'🎁')}</div><h3>${esc(r.name)}</h3><p class="mut">${esc(r.desc)}</p><div class="meter"><i style="width:${p}%"></i></div>
-  <button class="btn ${can?'go':'ghost'}" ${can?'':'disabled'} onclick="ask(${r.id})">${can?'🎉 Ask for it! ('+r.price+' 🪙)':(r.price-S.coins)+' more coins'}</button></div>`}).join('')+'</div>':'<div class="card"><p>No rewards yet. Ask a grown-up to add some!</p></div>')+reqList()}
+const kd=r=>r.kind||'once';
+const THEMES=[['ocean','Ocean','🌊',0],['candy','Candy','🍭',40],['forest','Forest','🌲',40],['sunset','Sunset','🌅',60],['space','Space','🚀',80]];
+const PALS=CH.map(e=>[e,0]).concat([['🦖',30],['🦕',45],['🐉',45],['🤖',60],['👾',60],['🦸',80]]);
+function isGot(r){return S.reqs.some(q=>q.rid===r.id&&q.st==='approved'&&(kd(r)==='once'||(kd(r)==='daily'&&q.t===today())))}
+function isWait(r){return S.reqs.some(q=>q.rid===r.id&&q.st==='pending')}
+function resetRw(id){S.reqs.forEach(q=>{if(q.rid===id&&q.st==='approved')q.st='used'});save();render()}
+function rwCard(r){const got=isGot(r),w=isWait(r),can=S.coins>=r.price&&!w,p=Math.min(100,Math.round(S.coins/r.price*100)),k={once:'One-time',daily:'Daily',many:'Anytime'}[kd(r)];
+  return `<div class="card rw ${got?'got':''}"><span class="tag">${k}</span><div class="ic">${esc(r.ic||'🎁')}</div><h3>${esc(r.name)}</h3><p class="mut">${esc(r.desc)}</p>
+  ${got?`<p class="big">✅ Got it${kd(r)==='daily'?'! Back tomorrow':'!'}</p>`:`<div class="meter"><i style="width:${p}%"></i></div><button class="btn ${can?'go':'ghost'}" ${can?'':'disabled'} onclick="ask(${r.id})">${w?'⏳ Waiting for OK':can?'🎉 Ask for it! ('+r.price+' 🪙)':(r.price-S.coins)+' more coins'}</button>`}</div>`}
+function buy(k,price,use){if(S.coins<price)return;coin(-price,'buy');S.own.push(k);sfx('win');toast('New style unlocked! 🎉');if(use)k.indexOf('th:')===0?setTheme(use):setPal(use);else render()}
+function setTheme(id){THEME=id;try{localStorage.setItem('ipatch.theme',id)}catch(e){}render()}
+function setPal(e){S.char=e;S.setAt=Date.now();save();render()}
+function styleItem(k,price,icon,name,on,use,fn){const ow=!price||S.own.includes(k),can=S.coins>=price;
+  return `<div class="card rw"><div class="ic">${icon}</div><h3>${name}</h3>${ow?`<button class="btn ${on?'ghost':'go'}" ${on?'disabled':''} onclick="${fn}('${use}')">${on?'In use':'Use it'}</button>`:
+  `<button class="btn ${can?'go':'ghost'}" ${can?'':'disabled'} onclick="buy('${k}',${price},'${use}')">${can?'Buy · '+price+' 🪙':(price-S.coins)+' more coins'}</button>`}</div>`}
+function styleShop(){return '<h3 class="sec">Themes</h3><div class="grid">'+THEMES.map(t=>styleItem('th:'+t[0],t[3],t[2],t[1],THEME===t[0],t[0],'setTheme')).join('')+
+  '</div><h3 class="sec">Pals</h3><div class="grid">'+PALS.map(p=>styleItem('pal:'+p[0],p[1],p[0],'Pal',S.char===p[0],p[0],'setPal')).join('')+'</div>'}
+function vShop(){const st=ui.st==='s';
+  const top=`<h2 class="sec">${st?'🎨 Style shop':'🎁 Reward shop'}</h2><div class="tile t2 wide">You have <b>🪙 ${S.coins}</b>coins</div>
+  <div class="row" style="margin:8px 0"><button class="btn sm ${st?'ghost':'sea'}" onclick="ui.st='r';render()">🎁 Rewards</button><button class="btn sm ${st?'sea':'ghost'}" onclick="ui.st='s';render()">🎨 Style shop</button></div>`;
+  if(st)return top+styleShop();
+  const all=rws(),act=all.filter(r=>!(kd(r)==='once'&&isGot(r))),col=all.filter(r=>kd(r)==='once'&&isGot(r));
+  return top+(act.length?'<div class="grid">'+act.map(rwCard).join('')+'</div>':'<div class="card"><p>Nothing here right now. Ask a grown-up to add rewards!</p></div>')+
+    (col.length?'<h3 class="sec">✅ Collected</h3><div class="grid">'+col.map(rwCard).join('')+'</div>':'')+reqList()}
+
 function vLevels(){const L=lvl(S.xp),lo=60*(L-1)**2,hi=60*L**2,p=Math.round((S.xp-lo)/(hi-lo)*100);
   return `<div class="card" style="text-align:center"><div class="hero2 bob">${S.char}</div><h2>Level ${L}: ${title(L)}</h2><div class="meter big"><i style="width:${p}%"></i></div>
-  <p>${hi-S.xp} XP to level ${L+1}</p><p class="mut">1 XP every minute. +25 XP for each finished day!</p></div>
+  <p>${hi-S.xp} XP to level ${L+1}</p><p class="mut">1 XP every minute. +25 XP for each finished day! Every new level gives you ${S.cpl} 🪙!</p></div>
   <div class="badges">`+TITLES.map((t,i)=>`<div class="badge ${L>i?'':'lock'}"><span>${L>i?BADGES[i]:'🔒'}</span>${t}<small>Level ${i+1}</small></div>`).join('')+'</div>'}
 
 function vOv(){const done=Object.keys(S.logs).filter(met).length,pm=pn().reduce((a,e)=>a+e.m,0);
@@ -345,9 +408,9 @@ function vGoals(){const h=Math.floor(S.goal/60),m=S.goal%60;
   ${acctCards()}<div class="card"><h3>Parent PIN</h3><div class="row"><input id="np" type="password" inputmode="numeric" maxlength="4" placeholder="new 4-digit PIN"><button class="btn" onclick="newPin()">Change</button></div></div>`}
 
 function vRew(){return `<div class="card"><h2>Rewards</h2>`+(rws().length?rws().map(r=>`<div class="item"><div><h3>${esc(r.name)}</h3><p class="mut">${esc(r.desc)}</p></div>
-  <div style="text-align:right"><div class="price">🪙 ${r.price}</div><button class="btn red sm" style="margin-top:6px" onclick="delReward(${r.id})">Delete</button></div></div>`).join(''):'<p class="mut">No rewards yet.</p>')+`</div>
+  <div style="text-align:right"><div class="price">🪙 ${r.price} · ${{once:'one-time',daily:'daily',many:'anytime'}[kd(r)]}</div>${isGot(r)?`<button class="btn sm" style="margin-top:6px" onclick="resetRw(${r.id})">Bring back</button> `:''}<button class="btn red sm" style="margin-top:6px" onclick="delReward(${r.id})">Delete</button></div></div>`).join(''):'<p class="mut">No rewards yet.</p>')+`</div>
   <div class="card"><h3>New reward</h3><label for="rn">Name</label><input id="rn" maxlength="40" placeholder="Ice cream trip"><label for="ri">Picture (one emoji)</label><input id="ri" maxlength="4" placeholder="🍦">
-  <label for="rd">Description</label><input id="rd" maxlength="90" placeholder="Pick any flavor"><label for="rp">Coin price</label><input id="rp" type="number" min="1" placeholder="50">
+  <label for="rd">Description</label><input id="rd" maxlength="90" placeholder="Pick any flavor"><label for="rp">Coin price</label><input id="rp" type="number" min="1" placeholder="50"><label for="rk">How it works</label><select id="rk"><option value="once">One time (crossed off when approved)</option><option value="daily">Daily (back every day)</option><option value="many">Anytime (always there)</option></select>
   <p><button class="btn sea" onclick="addReward()">Add reward</button></p></div>`}
 
 function vReq(){const p=S.reqs.filter(r=>r.st==='pending'),o=S.reqs.filter(r=>r.st!=='pending').slice(0,8);
@@ -362,7 +425,7 @@ function vFix(){const d=ui.fd||today();
   <p class="mut">Coins already awarded stay put. Use Add or Remove under Goals if they need adjusting.</p></div>`}
 
 const hero=()=>`<div class="hero-top"><div class="disp hero-title">iPatch</div><div class="hero-emoji"><span class="bob">⛵</span><span>🏝️</span><span class="bob" style="animation-delay:.3s">🧰</span></div><p class="hero-sub">Patch time is treasure time!</p></div>`;
-function render(){const A=$('#app');
+function render(){const A=$('#app');if(document.body)document.body.setAttribute('data-theme',THEME);
   if(AU&&S&&ui.recover){A.innerHTML=`<main>${hero()}<div class="card"><h2>Choose a new password</h2><label for="npw">New password (6+ characters)</label>
     <input id="npw" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')setNewPw()"><p><button class="btn go" onclick="setNewPw()">Save password</button></p></div></main>`;return}
   if(!AU||!S){const cr=ui.cr,en=`onkeydown="if(event.key==='Enter')doAuth(${!!cr})"`;
@@ -379,9 +442,9 @@ function render(){const A=$('#app');
     <button class="btn go" onclick="pickRole('kid')">👧 The kid’s device</button><button class="btn sea" style="width:100%;margin-top:12px;font-size:1.2rem" onclick="pickRole('parent')">🔒 A grown-up’s device</button>
     <p class="mut">A kid’s device opens straight to Kid Mode and needs the PIN to leave it.</p></div></main>`;return}
   const kid=ui.mode==='kid',pend=S.reqs.filter(r=>r.st==='pending').length+pn().length;
-  const T=kid?[['home','🏠<small>Home</small>'],['timer','⏱<small>Timer</small>'],['cal','📅<small>Days</small>'],['shop','🎁<small>Shop</small>'],['lv','⭐<small>Rank</small>']]
+  const T=kid?[['home','🏠<small>Home</small>'],['timer','⏱<small>Timer</small>'],['cal','📅<small>Days</small>'],['shop','🎁<small>Shop</small>'],['lv','⭐<small>Rank</small>'],['play','🎮<small>Play</small>']]
              :[['ov','📊 Overview'],['goals','🎯 Goals'],['rew','🎁 Rewards'],['req','✋ Approvals'],['fix','✏️ Fix log']];
-  const V={home:vHome,timer:vTimer,cal:()=>vCal()+chartCard(14,false),shop:vShop,lv:vLevels,ov:vOv,goals:vGoals,rew:vRew,req:vReq,fix:vFix};
+  const V={home:vHome,timer:vTimer,cal:()=>vCal()+chartCard(14,false),shop:vShop,lv:vLevels,play:vPlay,ov:vOv,goals:vGoals,rew:vRew,req:vReq,fix:vFix};
   A.innerHTML=`<header><div class="logo disp">${S.char} iPatch</div><span class="chip" id="cs">${ui.sy||'☁️'}</span>${kid?`<span class="chip">🪙 ${S.coins}</span><span class="chip">⭐ ${lvl(S.xp)}</span>`:'<span class="chip">Parent Mode</span>'}
   <button class="chip" style="border:0;color:#fff;cursor:pointer;font:inherit" onclick="toggleMute()" aria-label="Sound on or off">${mute?'🔇':'🔊'}</button><button class="btn sm" onclick="${kid?'openGate()':"setMode('kid')"}">${kid?'🔒 Parent':'👧 Kid view'}</button></header>
   <nav class="${kid?'bnav':'tabs'}">${T.map(t=>`<button class="tab ${ui.tab===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}${t[0]==='req'&&pend?`<i>${pend}</i>`:''}</button>`).join('')}</nav>
@@ -391,7 +454,7 @@ function render(){const A=$('#app');
 
 setInterval(()=>{if(!S)return;const e=$('#tm'),r=$('#rf');if(e)e.textContent=fmtT(elapsed());if(r)r.style.strokeDashoffset=ringOff()},500);
 setInterval(()=>{if(AU&&S&&!document.hidden)sync()},20000);
-document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button'))sfx('tap')});
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button')&&!e.target.closest('.gcell'))sfx('tap')});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 boot();
 </script>
