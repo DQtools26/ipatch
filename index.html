@@ -126,7 +126,7 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(AU){c
 const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=()=>ds(new Date());
 const fmtMin=m=>{const h=Math.floor(m/60),r=m%60;return h?(h+'h'+(r?' '+r+'m':'')):r+'m'};
-const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,cpl:5,gp:3,gc:3,own:[],setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
+const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,cpl:5,gp:3,gc:3,bo:0,b1:3,b2:6,b3:9,bonus:{},own:[],setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
   rewards:[{id:1,name:'Extra bedtime story',desc:'One more chapter!',price:15,ic:'📖'}],reqs:[],pending:[],timer:{run:false,start:0,acc:0}});
 const nid=()=>Date.now()*10+Math.floor(Math.random()*10),uid=()=>Date.now()+'-'+Math.random().toString(36).slice(2,7);
 const pn=()=>S.pending.filter(e=>e.st!=='done'),rws=()=>S.rewards.filter(r=>!r.del);
@@ -147,14 +147,17 @@ function boom(){sfx('win');try{navigator.vibrate&&navigator.vibrate([60,40,60])}
 
 function derive(){S.logs={};S.coins=0;let x=0;
   S.tx.forEach(t=>{if(t.k==='min'){S.logs[t.d]=(S.logs[t.d]||0)+t.n;x+=t.n}else S.coins+=t.n});
-  Object.keys(S.logs).forEach(d=>{S.logs[d]=Math.max(0,S.logs[d])});S.coins=Math.max(0,S.coins);S.xp=Math.max(0,x+25*Object.keys(S.awarded).length)}
+  Object.keys(S.logs).forEach(d=>{S.logs[d]=Math.max(0,S.logs[d])});S.coins=Math.max(0,S.coins);S.xp=Math.max(0,x+25*Object.keys(S.awarded).length+10*Object.keys(S.bonus||{}).length)}
 function coin(n,w){S.tx.push({id:uid(),k:'coin',n:n,w:w});derive();save()}
 function addMin(m,d){d=d||today();const L0=lvl(S.xp);
   if(m)S.tx.push({id:uid(),k:'min',d:d,n:m});S.goalOn[d]=S.goalOn[d]||S.goal;derive();
-  let won=false;
+  let won=false,bon=0;
   if((S.logs[d]||0)>=S.goalOn[d]&&!S.awarded[d]){S.awarded[d]=1;S.tx.push({id:uid(),k:'coin',n:S.cpg,w:'goal'});derive();won=true}
+  if(S.bo&&(S.logs[d]||0)>=S.goalOn[d]){[[30,S.b1],[60,S.b2],[90,S.b3]].forEach(a=>{const k=d+':'+a[0];
+    if((S.logs[d]||0)>=S.goalOn[d]+a[0]&&!S.bonus[k]){S.bonus[k]=1;S.tx.push({id:'b'+a[0]+'-'+d,k:'coin',n:a[1]||0,w:'bonus'});bon=a[0]}});derive()}
   for(let l=L0+1;l<=lvl(S.xp);l++){const id='lv-'+l;if(!S.tx.some(x=>x.id===id))S.tx.push({id:id,k:'coin',n:S.cpl||0,w:'level'})}derive();save();
-  if(won&&d===today()){toast('Goal complete! +'+S.cpg+' coins 🪙');boom()}
+  if(bon&&d===today()){toast('Bonus +'+bon+' minutes! Extra coins 🌟');boom()}
+  else if(won&&d===today()){toast('Goal complete! +'+S.cpg+' coins 🪙');boom()}
   else if(lvl(S.xp)>L0){toast('Level up! You are now a '+title(lvl(S.xp))+' ⚓'+(S.cpl?' +'+S.cpl+' 🪙':''));boom()}
   render();}
 
@@ -200,15 +203,15 @@ async function signOut(){try{await sync()}catch(x){}AU=null;saveAU();S=null;DEV=
 
 /* ---------- sync ---------- */
 const canon=v=>Array.isArray(v)?'['+v.map(canon).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}':JSON.stringify(v);
-const RK={pending:0,denied:1,approved:2,used:3};
+const RK={pending:0,denied:1,approved:2,used:3,refunded:3,archived:4};
 const byId=a=>a.slice().sort((x,y)=>String(x.id)<String(y.id)?-1:1);
-const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,cpl:S.cpl,gp:S.gp,gc:S.gc,own:S.own.slice().sort(),setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
+const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,cpl:S.cpl,gp:S.gp,gc:S.gc,bo:S.bo,b1:S.b1,b2:S.b2,b3:S.b3,bonus:S.bonus,own:S.own.slice().sort(),setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
 function uni(x,y,f){const m=new Map();(x||[]).concat(y||[]).forEach(e=>{const o=m.get(e.id);m.set(e.id,o?f(o,e):e)});return Array.from(m.values())}
 function mergeIn(r){
-  if((r.setAt||0)>=(S.setAt||0)){['pin','char','goal','cpg','cpl','gp','gc','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
+  if((r.setAt||0)>=(S.setAt||0)){['pin','char','goal','cpg','cpl','gp','gc','bo','b1','b2','b3','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
   S.tx=uni(S.tx,r.tx,o=>o);S.pending=uni(S.pending,r.pending,(o,e)=>o.st==='done'?o:e);
   S.rewards=uni(S.rewards,r.rewards,(o,e)=>o.del?o:e);S.reqs=uni(S.reqs,r.reqs,(o,e)=>(RK[e.st]||0)>(RK[o.st]||0)?e:o);S.own=Array.from(new Set((S.own||[]).concat(r.own||[])));
-  S.awarded=Object.assign({},r.awarded,S.awarded);S.goalOn=Object.assign({},r.goalOn,S.goalOn);derive()}
+  S.awarded=Object.assign({},r.awarded,S.awarded);S.bonus=Object.assign({},r.bonus,S.bonus);S.goalOn=Object.assign({},r.goalOn,S.goalOn);derive()}
 function sy(t){ui.sy=t;const e=$('#cs');if(e)e.textContent=t}
 function rerender(){const a=document.activeElement;if(!(a&&a.tagName==='INPUT'))render()}
 async function sync(){if(!AU||!S)return;if(busy){dirty=true;return}busy=true;
@@ -216,7 +219,7 @@ async function sync(){if(!AU||!S)return;if(busy){dirty=true;return}busy=true;
     const g=await api('/rest/v1/families?id=eq.'+AU.uid+'&select=data,rev');
     if(!g.ok)throw new Error('get '+g.st);
     const row=g.j&&g.j[0],before=canon(snap());
-    if(row)mergeIn(row.data||{});
+    const pre={};S.reqs.forEach(q=>{pre[q.id]=q.st});if(row)mergeIn(row.data||{});S.reqs.forEach(q=>{if(pre[q.id]==='pending'&&q.st!=='pending')notifyReq(q)});
     const mine=snap(),changed=canon(mine)!==before;
     if(row&&canon(row.data)===canon(mine)){if(changed){save();rerender()}sy('☁️ synced');break}
     const body={data:mine,rev:(row?row.rev:0)+1},hd={Prefer:'return=representation'};
@@ -235,7 +238,7 @@ async function fromLink(){const h=location.hash;
     if(!S){S=fresh();S.pin=md.pin||'';S.char=md.char||'🦊';S.setAt=1}
     S.uid=u.id;derive();save();ui.msg='';ui.cr=false;if(p.get('type')==='recovery')ui.recover=true}catch(x){}}
 async function boot(){
-  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];if(S.cpl==null)S.cpl=5;if(S.gp==null)S.gp=3;if(S.gc==null)S.gc=3;S.own=S.own||[];
+  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];if(S.cpl==null)S.cpl=5;if(S.gp==null)S.gp=3;if(S.gc==null)S.gc=3;if(S.bo==null){S.bo=0;S.b1=3;S.b2=6;S.b3=9}S.bonus=S.bonus||{};S.own=S.own||[];
     if(!S.tx.length){Object.keys(S.logs||{}).forEach(d=>S.tx.push({id:uid(),k:'min',d:d,n:S.logs[d]}));if(S.coins)S.tx.push({id:uid(),k:'coin',n:S.coins,w:'migrate'})}
     S.pending.forEach(e=>{e.st=e.st||'new'});derive()}
   await fromLink();
@@ -267,6 +270,9 @@ function vPlay(){if(!S.gp)return '<div class="card"><h2>🎮 Treasure Tap</h2><p
   ${G.on?'':`<p class="mut">${left} play${left===1?'':'s'} left today</p><button class="btn go" ${left?'':'disabled'} onclick="gStart()">▶ Play</button>`}</div>`}
 
 /* ---------- daily chest, saving-for ---------- */
+function bonusRow(){if(!S.bo)return '';const d=today();
+  return '<div class="row" style="justify-content:center;margin:10px 0">'+[[30,S.b1],[60,S.b2],[90,S.b3]].map(a=>{const got=S.bonus[d+':'+a[0]];
+    return `<span class="chip" style="background:${got?'var(--sun)':'#e6ebf5'};color:var(--navy)">${got?'✅':'⭐'} +${a[0]} min · ${a[1]} 🪙</span>`}).join('')+'</div>'}
 function chestBtn(){const t=today(),done=S.tx.some(x=>x.id==='chest-'+t);
   return met(t)?(done?'<p class="mut">🎁 Daily chest opened. See you tomorrow!</p>':'<button class="btn" style="width:100%;margin-top:10px;font-size:1.2rem" onclick="openChest()">🎁 Open today’s chest!</button>'):''}
 function openChest(){const t=today();if(!met(t)||S.tx.some(x=>x.id==='chest-'+t))return;const n=1+Math.floor(Math.random()*4)+(streak()>=3?2:0);
@@ -274,11 +280,34 @@ function openChest(){const t=today();if(!met(t)||S.tx.some(x=>x.id==='chest-'+t)
 function saving(){const r=rws().filter(x=>!isGot(x)&&x.price>S.coins).sort((a,b)=>a.price-b.price)[0];if(!r)return '';
   return `<div class="card"><h3>🎯 Saving for ${esc(r.ic||'🎁')} ${esc(r.name)}</h3><div class="meter"><i style="width:${Math.round(S.coins/r.price*100)}%"></i></div><p class="mut">${S.coins} of ${r.price} coins</p></div>`}
 function okAll(){pn().slice().forEach(e=>{e.st='done';addMin(e.m,e.d)})}
+function useRw(id){const q=S.reqs.find(x=>x.id===id);if(!q||q.st!=='approved')return;q.st='used';save();sfx('done');render()}
+function refundRw(id){const q=S.reqs.find(x=>x.id===id);if(!q||q.st!=='approved')return;if(!confirm('Give the coins back and cancel this reward?'))return;q.st='refunded';refundTx(q);render()}
+function earnCard(){const l=S.reqs.filter(q=>q.st==='approved');
+  return '<div class="card"><h2>Earned rewards</h2>'+(l.length?l.map(q=>`<div class="item"><div><h3>${esc(q.name)}</h3><p class="mut">🪙 ${q.price} · earned ${q.t}</p></div>
+  <div class="row"><button class="btn sea sm" onclick="useRw(${q.id})">✅ Used</button><button class="btn red sm" onclick="refundRw(${q.id})">↩ Refund</button></div></div>`).join(''):'<p class="mut">Nothing waiting to be given.</p>')+
+  '<p class="mut">Tap Used once your child has it. It gets crossed off and goes away. Refund gives the coins back.</p></div>'}
+function refundTx(q){const id='rf-'+q.id;if(!S.tx.some(t=>t.id===id))S.tx.push({id:id,k:'coin',n:q.price,w:'refund'});derive();save()}
+async function kidRefund(id){await sync();const q=S.reqs.find(x=>x.id===id);
+  if(!q||(q.st!=='approved'&&q.st!=='pending')){toast('A grown-up already handled that one');render();return}
+  if(!confirm(q.st==='approved'?'Give this reward back and get your coins back?':'Cancel this request and get your coins back?'))return;
+  q.st='refunded';refundTx(q);sfx('coin');toast('↩ Coins back: +'+q.price+' 🪙');render()}
+function earnedKid(){const a=S.reqs.filter(q=>q.st==='approved'),p=S.reqs.filter(q=>q.st==='pending');if(!a.length&&!p.length)return '';
+  const ic=q=>{const r=S.rewards.find(x=>x.id===q.rid);return esc((r&&r.ic)||'🎁')};
+  return '<div class="card" style="background:#fff0b3">'+(a.length?'<h2>🎉 I earned!</h2><p class="mut">Waiting for a grown-up to give these to you.</p>'+a.map(q=>`<div class="item"><span style="font-size:2rem">${ic(q)}</span><div style="flex:1"><h3>${esc(q.name)}</h3></div><button class="btn ghost sm" onclick="kidRefund(${q.id})">↩ Change my mind</button></div>`).join(''):'')+
+  (p.length?'<h3 style="margin-top:12px">⏳ Waiting for OK</h3>'+p.map(q=>`<div class="item"><span style="font-size:2rem">${ic(q)}</span><div style="flex:1"><h3>${esc(q.name)}</h3></div><button class="btn ghost sm" onclick="kidRefund(${q.id})">✖ Cancel</button></div>`).join(''):'')+'</div>'}
+function earnNote(){const n=S.reqs.filter(q=>q.st==='approved').length;
+  return n?`<p class="chip" style="background:#fff0b3;color:var(--navy);display:inline-block;cursor:pointer" onclick="ui.st='r';setTab('shop')">🎉 You earned ${n} reward${n>1?'s':''}! Tap to see</p>`:''}
+function notifyReq(q){if(ui.mode!=='kid')return;
+  if(q.st==='approved'){sfx('win');boom();toast('🎉 You earned: '+q.name+'!')}
+  else if(q.st==='denied'||q.st==='refunded'){sfx('done');toast('↩ Coins back: +'+q.price+' 🪙 for '+q.name)}}
 function funCard(){return `<div class="card"><h3>Fun &amp; rewards</h3><label for="lc">Coins for each new level</label><input id="lc" type="number" min="0" value="${S.cpl}">
   <label for="gpx">Game plays per day (0 turns the game off)</label><input id="gpx" type="number" min="0" max="20" value="${S.gp}">
-  <label for="gcx">Most coins one game can give</label><input id="gcx" type="number" min="0" max="50" value="${S.gc}"><p><button class="btn sea" onclick="saveFun()">Save</button></p></div>`}
+  <label for="gcx">Most coins one game can give</label><input id="gcx" type="number" min="0" max="50" value="${S.gc}"><label style="display:flex;gap:10px;align-items:center;margin-top:14px"><input type="checkbox" id="bo" ${S.bo?'checked':''} style="width:auto;transform:scale(1.4)"> Bonus time: extra coins for +30, +60 and +90 minutes past the daily goal</label>
+  <p class="mut">Only turn this on if your child’s eye-care professional says extra patch time is OK.</p>
+  <div class="row"><input id="b1" type="number" min="0" value="${S.b1}" aria-label="Coins for 30 extra minutes"><input id="b2" type="number" min="0" value="${S.b2}" aria-label="Coins for 60 extra minutes"><input id="b3" type="number" min="0" value="${S.b3}" aria-label="Coins for 90 extra minutes"></div>
+  <p class="mut">Coins for +30 / +60 / +90 minutes</p><p><button class="btn sea" onclick="saveFun()">Save</button></p></div>`}
 function saveFun(){const a=parseInt($('#lc').value,10),b=parseInt($('#gpx').value,10),c=parseInt($('#gcx').value,10);
-  if(!(a>=0&&b>=0&&c>=0)){toast('Use numbers 0 or more');return}S.cpl=a;S.gp=b;S.gc=c;S.setAt=Date.now();save();toast('Saved');render()}
+  if(!(a>=0&&b>=0&&c>=0)){toast('Use numbers 0 or more');return}S.cpl=a;S.gp=b;S.gc=c;S.bo=$('#bo').checked?1:0;S.b1=Math.max(0,parseInt($('#b1').value,10)||0);S.b2=Math.max(0,parseInt($('#b2').value,10)||0);S.b3=Math.max(0,parseInt($('#b3').value,10)||0);S.setAt=Date.now();save();toast('Saved');render()}
 
 /* ---------- kid actions ---------- */
 function addCustom(){const v=parseInt($('#am').value,10);if(!(v>=1&&v<=600)){toast('Type minutes between 1 and 600');return}submit(v)}
@@ -306,7 +335,7 @@ function addReward(){const n=$('#rn').value.trim(),d=$('#rd').value.trim(),p=par
   if(!n||!(p>=1)){toast('A reward needs a name and a coin price');return}
   S.rewards.push({id:nid(),name:n,desc:d,price:p,kind:$('#rk').value,ic:Array.from($('#ri').value.trim())[0]||'🎁'});save();render()}
 function delReward(id){if(confirm('Delete this reward?')){const r=S.rewards.find(x=>x.id===id);if(r)r.del=1;save();render()}}
-function resolve(id,ok){const r=S.reqs.find(x=>x.id===id);if(!r)return;r.st=ok?'approved':'denied';if(!ok)coin(r.price,'refund');save();render()}
+function resolve(id,ok){const r=S.reqs.find(x=>x.id===id);if(!r)return;r.st=ok?'approved':'denied';if(!ok)refundTx(r);save();render()}
 function fixDay(){const v=parseInt($('#fm').value,10);if(!(v>=0&&v<=1440)){toast('Enter minutes from 0 to 1440');return}
   const d=ui.fd||today();addMin(v-(S.logs[d]||0),d);toast('Log updated')}
 function fixDate(v){ui.fd=v||today();render()}
@@ -340,7 +369,7 @@ function quest(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0,p=Math.m
 function vHome(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0;
   return `<div class="card hero-card"><h2>Ahoy, ${title(lvl(S.xp))}!</h2>${quest()}<p class="big">${Math.min(m,g)} of ${g} minutes</p>
   <p class="mut">${m>=g?'You did it! The treasure is yours! 🎉':(g-m)+' more minutes to open the treasure!'}</p>
-  ${chestBtn()}${pw()}<button class="btn go" onclick="setTab('timer')">▶ Start patch time</button></div>
+  ${bonusRow()}${chestBtn()}${earnNote()}${pw()}<button class="btn go" onclick="setTab('timer')">▶ Start patch time</button></div>
   <div class="tiles"><div class="tile t1"><b>🔥 ${streak()}</b>day streak</div><div class="tile t2"><b>🪙 ${S.coins}</b>coins</div><div class="tile t3"><b>⭐ ${lvl(S.xp)}</b>level</div></div>
   ${saving()}<details class="card"><summary class="disp">Already patched? Add time (a grown-up checks it)</summary><div class="row" style="margin-top:10px"><button class="btn sea" onclick="submit(10)">+10</button><button class="btn sea" onclick="submit(15)">+15</button><button class="btn sea" onclick="submit(30)">+30</button></div>
   <label for="am">Or type minutes</label><div class="row"><input id="am" type="number" inputmode="numeric" min="1" max="600" placeholder="minutes"><button class="btn" onclick="addCustom()">Add</button></div></details>`}
@@ -365,14 +394,14 @@ function vCal(){const y=ui.cm.getFullYear(),m=ui.cm.getMonth(),first=new Date(y,
   <div class="stats"><div class="stat"><b>${done}</b><span>days completed</span></div><div class="stat"><b>🔥 ${streak()}</b><span>current streak</span></div><div class="stat"><b>${Object.values(S.logs).reduce((a,b)=>a+b,0)}</b><span>total minutes</span></div></div>`}
 
 function reqList(){const l=S.reqs.slice(0,8);if(!l.length)return '';
-  return `<div class="card"><h3>My requests</h3>`+l.map(r=>`<div class="item"><span>${esc(r.name)}</span><span class="price">${r.st==='denied'?'↩ coins back':r.st==='pending'?'⏳ waiting':'✅ yes!'}</span></div>`).join('')+'</div>'}
+  return `<div class="card"><h3>My requests</h3>`+l.map(r=>`<div class="item"><span>${esc(r.name)}</span><span class="price">${({pending:'⏳ waiting',approved:'🎉 You earned it!',used:'✅ Used',denied:'↩ Coins back',refunded:'↩ Refunded',archived:'✅ Done'})[r.st]||r.st}</span></div>`).join('')+'</div>'}
 const BADGES=['🧢','⚓','🔭','🧭','🦜','🏴‍☠️','👑','🌊'];
 const kd=r=>r.kind||'once';
 const THEMES=[['ocean','Ocean','🌊',0],['candy','Candy','🍭',40],['forest','Forest','🌲',40],['sunset','Sunset','🌅',60],['space','Space','🚀',80]];
 const PALS=CH.map(e=>[e,0]).concat([['🦖',30],['🦕',45],['🐉',45],['🤖',60],['👾',60],['🦸',80]]);
-function isGot(r){return S.reqs.some(q=>q.rid===r.id&&q.st==='approved'&&(kd(r)==='once'||(kd(r)==='daily'&&q.t===today())))}
+function isGot(r){return S.reqs.some(q=>q.rid===r.id&&(q.st==='approved'||q.st==='used')&&(kd(r)==='once'||(kd(r)==='daily'&&q.t===today())))}
 function isWait(r){return S.reqs.some(q=>q.rid===r.id&&q.st==='pending')}
-function resetRw(id){S.reqs.forEach(q=>{if(q.rid===id&&q.st==='approved')q.st='used'});save();render()}
+function resetRw(id){const u=S.reqs.filter(q=>q.rid===id&&q.st==='used');if(!u.length){toast('Mark the earned reward Used or Refund it first');return}u.forEach(q=>{q.st='archived'});save();render()}
 function rwCard(r){const got=isGot(r),w=isWait(r),can=S.coins>=r.price&&!w,p=Math.min(100,Math.round(S.coins/r.price*100)),k={once:'One-time',daily:'Daily',many:'Anytime'}[kd(r)];
   return `<div class="card rw ${got?'got':''}"><span class="tag">${k}</span><div class="ic">${esc(r.ic||'🎁')}</div><h3>${esc(r.name)}</h3><p class="mut">${esc(r.desc)}</p>
   ${got?`<p class="big">✅ Got it${kd(r)==='daily'?'! Back tomorrow':'!'}</p>`:`<div class="meter"><i style="width:${p}%"></i></div><button class="btn ${can?'go':'ghost'}" ${can?'':'disabled'} onclick="ask(${r.id})">${w?'⏳ Waiting for OK':can?'🎉 Ask for it! ('+r.price+' 🪙)':(r.price-S.coins)+' more coins'}</button>`}</div>`}
@@ -389,7 +418,7 @@ function vShop(){const st=ui.st==='s';
   <div class="row" style="margin:8px 0"><button class="btn sm ${st?'ghost':'sea'}" onclick="ui.st='r';render()">🎁 Rewards</button><button class="btn sm ${st?'sea':'ghost'}" onclick="ui.st='s';render()">🎨 Style shop</button></div>`;
   if(st)return top+styleShop();
   const all=rws(),act=all.filter(r=>!(kd(r)==='once'&&isGot(r))),col=all.filter(r=>kd(r)==='once'&&isGot(r));
-  return top+(act.length?'<div class="grid">'+act.map(rwCard).join('')+'</div>':'<div class="card"><p>Nothing here right now. Ask a grown-up to add rewards!</p></div>')+
+  return top+earnedKid()+(act.length?'<div class="grid">'+act.map(rwCard).join('')+'</div>':'<div class="card"><p>Nothing here right now. Ask a grown-up to add rewards!</p></div>')+
     (col.length?'<h3 class="sec">✅ Collected</h3><div class="grid">'+col.map(rwCard).join('')+'</div>':'')+reqList()}
 
 function vLevels(){const L=lvl(S.xp),lo=60*(L-1)**2,hi=60*L**2,p=Math.round((S.xp-lo)/(hi-lo)*100);
@@ -414,7 +443,7 @@ function vRew(){return `<div class="card"><h2>Rewards</h2>`+(rws().length?rws().
   <p><button class="btn sea" onclick="addReward()">Add reward</button></p></div>`}
 
 function vReq(){const p=S.reqs.filter(r=>r.st==='pending'),o=S.reqs.filter(r=>r.st!=='pending').slice(0,8);
-  return timeCard()+`<div class="card"><h2>Reward requests</h2>`+(p.length?p.map(r=>`<div class="item"><div><h3>${esc(r.name)}</h3><span class="price">🪙 ${r.price}</span></div>
+  return timeCard()+earnCard()+`<div class="card"><h2>Reward requests</h2>`+(p.length?p.map(r=>`<div class="item"><div><h3>${esc(r.name)}</h3><span class="price">🪙 ${r.price}</span></div>
   <div class="row"><button class="btn sea sm" onclick="resolve(${r.id},true)">Approve</button><button class="btn red sm" onclick="resolve(${r.id},false)">Deny</button></div></div>`).join(''):'<p class="mut">Nothing waiting.</p>')+`<p class="mut">Coins are held when your child asks, and returned if you deny.</p></div>`+
   (o.length?`<div class="card"><h3>Recent</h3>`+o.map(r=>`<div class="item"><span>${esc(r.name)}</span><span class="mut">${r.st}</span></div>`).join('')+'</div>':'')}
 
@@ -441,7 +470,7 @@ function render(){const A=$('#app');if(document.body)document.body.setAttribute(
     ${S.pin?'':'<p class="mut">First pick a 4-digit PIN. It unlocks Parent Mode.</p><input id="wp" type="password" inputmode="numeric" maxlength="4" placeholder="4-digit PIN" onkeydown="if(event.key===\'Enter\')pickRole(\'parent\')">'}
     <button class="btn go" onclick="pickRole('kid')">👧 The kid’s device</button><button class="btn sea" style="width:100%;margin-top:12px;font-size:1.2rem" onclick="pickRole('parent')">🔒 A grown-up’s device</button>
     <p class="mut">A kid’s device opens straight to Kid Mode and needs the PIN to leave it.</p></div></main>`;return}
-  const kid=ui.mode==='kid',pend=S.reqs.filter(r=>r.st==='pending').length+pn().length;
+  const kid=ui.mode==='kid',pend=S.reqs.filter(r=>r.st==='pending').length+pn().length+S.reqs.filter(r=>r.st==='approved').length;
   const T=kid?[['home','🏠<small>Home</small>'],['timer','⏱<small>Timer</small>'],['cal','📅<small>Days</small>'],['shop','🎁<small>Shop</small>'],['lv','⭐<small>Rank</small>'],['play','🎮<small>Play</small>']]
              :[['ov','📊 Overview'],['goals','🎯 Goals'],['rew','🎁 Rewards'],['req','✋ Approvals'],['fix','✏️ Fix log']];
   const V={home:vHome,timer:vTimer,cal:()=>vCal()+chartCard(14,false),shop:vShop,lv:vLevels,play:vPlay,ov:vOv,goals:vGoals,rew:vRew,req:vReq,fix:vFix};
