@@ -148,7 +148,7 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(AU){c
 const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=()=>ds(new Date());
 const fmtMin=m=>{const h=Math.floor(m/60),r=m%60;return h?(h+'h'+(r?' '+r+'m':'')):r+'m'};
-const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,cpl:5,gp:3,gc:3,sm:5,sd:1,ms:[5,10,20,40,80,150],bo:0,b1:3,b2:6,b3:9,bonus:{},own:[],setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
+const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,cpl:5,gp:3,gc:3,sm:5,sd:1,ms:[5,10,20,40,80,150],bo:0,b1:3,b2:6,b3:9,bonus:{},own:[],pets:[],pa:'',px:0,setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
   rewards:[{id:1,name:'Extra bedtime story',desc:'One more chapter!',price:15,ic:'📖'}],reqs:[],pending:[],timer:{run:false,start:0,acc:0}});
 const nid=()=>Date.now()*10+Math.floor(Math.random()*10),uid=()=>Date.now()+'-'+Math.random().toString(36).slice(2,7);
 const pn=()=>S.pending.filter(e=>e.st!=='done'),rws=()=>S.rewards.filter(r=>!r.del);
@@ -223,7 +223,9 @@ async function setNewPw(){const p=$('#npw').value;if(p.length<6){toast('Password
 async function forgot(){const e=$('#e').value.trim().toLowerCase();if(!e.includes('@')){toast('Type your email first');return}
   const r=await api('/auth/v1/recover?redirect_to='+encodeURIComponent(location.origin+location.pathname),{m:'POST',auth:false,b:{email:e}});
   ui.msg=r.ok?'📧 If that email has an account, a reset link is on its way.':'Could not send it. Try again in a minute.';render()}
-function acctCards(){return streakSet()+funCard()+`<div class="card"><h3>This device</h3><p class="mut">Now: ${DEV==='kid'?'the kid’s device (opens straight to Kid Mode)':'a grown-up’s device'}</p>
+function petCard(){return `<div class="card"><h3>🧪 Experimental</h3><p class="mut">Pets tab for the kid: adopt a pet, open packs, decorate. Off by default.</p><button class="btn sm ${S.px?'sea':'ghost'}" onclick="togglePx()">${S.px?'Pets are ON (tap to turn off)':'Pets are OFF (tap to turn on)'}</button></div>`}
+function togglePx(){S.px=S.px?0:1;S.setAt=Date.now();save();render()}
+function acctCards(){return streakSet()+funCard()+petCard()+`<div class="card"><h3>This device</h3><p class="mut">Now: ${DEV==='kid'?'the kid’s device (opens straight to Kid Mode)':'a grown-up’s device'}</p>
   <div class="row"><button class="btn sea sm" onclick="setDev('kid')">Make it the kid’s device</button><button class="btn ghost sm" onclick="setDev('parent')">Grown-up device</button></div></div>
   <div class="card"><h3>Character</h3><div class="chars">${CH.map((c,i)=>`<button type="button" class="${c===S.char?'on':''}" onclick="setChar(${i})" aria-label="Character ${c}">${c}</button>`).join('')}</div></div>
   <div class="card"><h3>Account</h3><p class="mut">${esc(AU.email)}</p><label for="nem">New email</label><div class="row"><input id="nem" type="email" autocomplete="email"><button class="btn sm" onclick="chgEmail()">Change</button></div>
@@ -234,12 +236,12 @@ async function signOut(){try{await sync()}catch(x){}AU=null;saveAU();S=null;DEV=
 const canon=v=>Array.isArray(v)?'['+v.map(canon).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}':JSON.stringify(v);
 const RK={pending:0,denied:1,approved:2,used:3,refunded:3,archived:4};
 const byId=a=>a.slice().sort((x,y)=>String(x.id)<String(y.id)?-1:1);
-const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,cpl:S.cpl,gp:S.gp,gc:S.gc,sm:S.sm,sd:S.sd,ms:S.ms,bo:S.bo,b1:S.b1,b2:S.b2,b3:S.b3,bonus:S.bonus,own:S.own.slice().sort(),setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
+const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,cpl:S.cpl,gp:S.gp,gc:S.gc,sm:S.sm,sd:S.sd,ms:S.ms,bo:S.bo,b1:S.b1,b2:S.b2,b3:S.b3,bonus:S.bonus,own:S.own.slice().sort(),pets:byId(S.pets||[]),pa:S.pa||'',px:S.px||0,setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
 function uni(x,y,f){const m=new Map();(x||[]).concat(y||[]).forEach(e=>{const o=m.get(e.id);m.set(e.id,o?f(o,e):e)});return Array.from(m.values())}
 function mergeIn(r){
-  if((r.setAt||0)>=(S.setAt||0)){['pin','char','goal','cpg','cpl','gp','gc','sm','sd','ms','bo','b1','b2','b3','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
+  if((r.setAt||0)>=(S.setAt||0)){['pin','char','goal','cpg','cpl','gp','gc','sm','sd','ms','bo','b1','b2','b3','pa','px','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
   S.tx=uni(S.tx,r.tx,o=>o);S.pending=uni(S.pending,r.pending,(o,e)=>o.st==='done'?o:e);
-  S.rewards=uni(S.rewards,r.rewards,(o,e)=>o.del?o:e);S.reqs=uni(S.reqs,r.reqs,(o,e)=>(RK[e.st]||0)>(RK[o.st]||0)?e:o);S.own=Array.from(new Set((S.own||[]).concat(r.own||[])));
+  S.rewards=uni(S.rewards,r.rewards,(o,e)=>o.del?o:e);S.reqs=uni(S.reqs,r.reqs,(o,e)=>(RK[e.st]||0)>(RK[o.st]||0)?e:o);S.own=Array.from(new Set((S.own||[]).concat(r.own||[])));S.pets=uni(S.pets||[],r.pets,(o,e)=>(e.xp||0)>(o.xp||0)?e:o);
   S.awarded=Object.assign({},r.awarded,S.awarded);S.bonus=Object.assign({},r.bonus,S.bonus);S.goalOn=Object.assign({},r.goalOn,S.goalOn);derive()}
 function sy(t){ui.sy=t;const e=$('#cs');if(e)e.textContent=t}
 function rerender(){const a=document.activeElement;if(!(a&&a.tagName==='INPUT'))render()}
@@ -267,12 +269,14 @@ async function fromLink(){const h=location.hash;
     if(!S){S=fresh();S.pin=md.pin||'';S.char=md.char||'🦊';S.setAt=1}
     S.uid=u.id;derive();save();ui.msg='';ui.cr=false;if(p.get('type')==='recovery')ui.recover=true}catch(x){}}
 async function boot(){
-  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];if(S.cpl==null)S.cpl=5;if(S.gp==null)S.gp=3;if(S.gc==null)S.gc=3;if(S.sm==null){S.sm=5;S.sd=1;S.ms=[5,10,20,40,80,150]}if(S.bo==null){S.bo=0;S.b1=3;S.b2=6;S.b3=9}S.bonus=S.bonus||{};S.own=S.own||[];
+  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];if(S.cpl==null)S.cpl=5;if(S.gp==null)S.gp=3;if(S.gc==null)S.gc=3;if(S.sm==null){S.sm=5;S.sd=1;S.ms=[5,10,20,40,80,150]}if(S.bo==null){S.bo=0;S.b1=3;S.b2=6;S.b3=9}S.bonus=S.bonus||{};S.own=S.own||[];S.pets=S.pets||[];S.pa=S.pa||'';S.px=S.px||0;
     if(!S.tx.length){Object.keys(S.logs||{}).forEach(d=>S.tx.push({id:uid(),k:'min',d:d,n:S.logs[d]}));if(S.coins)S.tx.push({id:uid(),k:'coin',n:S.coins,w:'migrate'})}
     S.pending.forEach(e=>{e.st=e.st||'new'});derive();streakAward();save()}
   await fromLink();
   if(AU&&!S){S=fresh();S.setAt=0;S.rewards=[];S.uid=AU.uid;derive()}
   if(AU&&S&&DEV){ui.mode=DEV==='kid'?'kid':'parent';ui.tab=DEV==='kid'?'home':'ov'}
+  if(S&&!(S.timer.run||S.timer.acc)){try{const b=JSON.parse(localStorage.getItem('ipatch.tmr')||'null');if(b&&(b.run||b.acc)){S.timer=b;save()}}catch(e){}}
+  if(S&&(S.timer.run||S.timer.acc)&&ui.mode==='kid')ui.tq=true;
   render();sync()}
 
 function openGate(){ui.gate=true;render();setTimeout(()=>{const g=$('#gp');g&&g.focus()},50)}
@@ -367,16 +371,18 @@ function saveFun(){const a=parseInt($('#lc').value,10),b=parseInt($('#gpx').valu
 
 /* ---------- kid actions ---------- */
 function addCustom(){const v=parseInt($('#am').value,10);if(!(v>=1&&v<=600)){toast('Type minutes between 1 and 600');return}submit(v)}
+const clk=ms=>new Date(ms).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+const tBak=()=>{try{localStorage.setItem('ipatch.tmr',JSON.stringify(S.timer))}catch(e){}};
 const elapsed=()=>S.timer.acc+(S.timer.run?Date.now()-S.timer.start:0);
-function tToggle(){const t=S.timer;if(t.run){t.acc+=Date.now()-t.start;t.run=false}else{t.start=Date.now();t.run=true;sfx('start')}save();render()}
+function tToggle(){const t=S.timer;if(t.run){t.acc+=Date.now()-t.start;t.run=false}else{t.start=Date.now();t.run=true;if(!t.acc||!t.st)t.st=t.st&&t.acc?t.st:Date.now();sfx('start')}tBak();save();render()}
 function tFinish(){const ms=elapsed();
   if(ms<10000){toast('Patch a little longer first. Under 10 seconds can’t count.');return}
-  const mins=Math.max(1,Math.round(ms/60000));S.timer={run:false,start:0,acc:0};save();submit(mins,'timer')}
+  const mins=Math.max(1,Math.round(ms/60000));S.timer={run:false,start:0,acc:0};tBak();save();submit(mins,'timer')}
 function submit(m,src){S.pending.unshift({id:nid(),m:m,d:today(),src:src||'manual',st:'new'});save();sfx('done');toast('Sent! A grown-up will check it ⏳');render()}
 function okTime(id,ok){const i=S.pending.findIndex(x=>x.id===id);if(i<0||S.pending[i].st==='done')return;const e=S.pending[i];
   const v=ok?parseInt($('#pm'+id).value,10):0;e.st='done';save();
   if(ok&&v>0){sfx('coin');addMin(v,e.d)}else render()}
-function tDiscard(){if(confirm('Throw away this timer without logging it?')){S.timer={run:false,start:0,acc:0};save();render()}}
+function tDiscard(){if(confirm('Throw away this timer without logging it?')){S.timer={run:false,start:0,acc:0};tBak();save();render()}}
 function ask(id){const r=S.rewards.find(x=>x.id===id);if(!r||S.coins<r.price||isWait(r)||isGot(r))return;
   coin(-r.price,'hold');S.reqs.unshift({id:nid(),rid:r.id,name:r.name,price:r.price,st:'pending',t:today()});save();sfx('coin');toast('Asked! A grown-up will check it 🎁');render()}
 function cal(n){ui.cm=new Date(ui.cm.getFullYear(),ui.cm.getMonth()+n,1);render()}
@@ -434,7 +440,7 @@ function vTimer(){const t=S.timer,idle=!t.run&&t.acc===0;
   return `<div class="card" style="text-align:center"><h2>${t.run?'Patch time! You’ve got this!':idle?'Ready?':'Paused'}</h2>
   <div class="ringbox"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" class="rbg"/><circle id="rf" cx="100" cy="100" r="88" class="rfg" style="stroke-dasharray:553;stroke-dashoffset:${ringOff()}"/></svg>
   <div class="rin"><span class="hero2 ${t.run?'bob':''}">${S.char}</span><div class="timer" id="tm">${fmtT(elapsed())}</div></div></div>
-  <p class="mut">The green ring fills up as you get closer to today’s goal.</p>
+  ${t.st?`<p><b>Started at ${clk(t.st)}</b></p>`:''}<p class="mut">The green ring fills up as you get closer to today’s goal.</p>
   <button class="btn go" onclick="tToggle()">${t.run?'⏸ Pause':idle?'▶ Start':'▶ Keep going'}</button>
   ${idle?'':'<button class="btn sea" style="width:100%;margin-top:12px;font-size:1.2rem" onclick="tFinish()">✅ I’m done</button><p><button class="link" onclick="tDiscard()">Throw this timer away</button></p>'}</div>`}
 const fmtT=ms=>{const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60);return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(s%60).padStart(2,'0')};
@@ -531,18 +537,67 @@ function render(){const A=$('#app');if(document.body)document.body.setAttribute(
     <p class="mut">A kid’s device opens straight to Kid Mode and needs the PIN to leave it.</p></div></main>`;return}
   const kid=ui.mode==='kid',pend=S.reqs.filter(r=>r.st==='pending').length+pn().length+S.reqs.filter(r=>r.st==='approved').length;
   if(document.body)document.body.setAttribute('data-mode',kid?'kid':'parent');
-  const T=kid?[['home','🏠<small>Home</small>'],['timer','⏱<small>Timer</small>'],['cal','🔥<small>Streak</small>'],['shop','🎁<small>Shop</small>'],['lv','⭐<small>Rank</small>'],['play','🎮<small>Play</small>']]
+  const T=kid?[['home','🏠<small>Home</small>'],['timer','⏱<small>Timer</small>'],['cal','🔥<small>Streak</small>'],['shop','🎁<small>Shop</small>'],...(S.px?[['pet','🐾<small>Pets</small>']]:[]),['lv','⭐<small>Rank</small>'],['play','🎮<small>Play</small>']]
              :[['ov','📊 Overview'],['goals','🎯 Goals'],['rew','🎁 Rewards'],['req','✋ Approvals'],['fix','✏️ Fix log']];
-  const V={home:vHome,timer:vTimer,cal:()=>vStreak()+vCal()+chartCard(14,false),shop:vShop,lv:vLevels,play:vPlay,ov:vOv,goals:vGoals,rew:vRew,req:vReq,fix:vFix};
-  A.innerHTML=`<div class="sky" aria-hidden="true"><span>☁️</span><span>☁️</span><span>🕊️</span></div><header><div class="logo disp">${S.char} iPatch</div><span class="chip" id="cs">${ui.sy||'☁️'}</span>${kid?`<span class="chip">🪙 ${S.coins}</span><span class="chip">⭐ ${lvl(S.xp)}</span>`:'<span class="chip">Parent Mode</span>'}
+  if(!S.px&&ui.tab==='pet')ui.tab='home';
+  const V={home:vHome,timer:vTimer,cal:()=>vStreak()+vCal()+chartCard(14,false),shop:vShop,pet:vPets,lv:vLevels,play:vPlay,ov:vOv,goals:vGoals,rew:vRew,req:vReq,fix:vFix};
+  A.innerHTML=`<header><div class="logo disp">${S.char} iPatch</div><span class="chip" id="cs">${ui.sy||'☁️'}</span>${kid?`<span class="chip">🪙 ${S.coins}</span><span class="chip">⭐ ${lvl(S.xp)}</span>`:'<span class="chip">Parent Mode</span>'}
   <button class="chip" style="border:0;color:#fff;cursor:pointer;font:inherit" onclick="toggleMute()" aria-label="Sound on or off">${mute?'🔇':'🔊'}</button><button class="btn sm" onclick="${kid?'openGate()':"setMode('kid')"}">${kid?'🔒 Parent':'👧 Kid view'}</button></header><div class="wave"></div>
   <nav class="${kid?'bnav':'tabs'}">${T.map(t=>`<button class="tab ${ui.tab===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}${t[0]==='req'&&pend?`<i>${pend}</i>`:''}</button>`).join('')}</nav>
   <main class="${kid?'kid':''}">${V[ui.tab]()}<p class="note">iPatch tracks and motivates. It is not medical advice. Follow your eye-care professional’s instructions.${kid?'':'<br><button class="link" onclick="signOut()">Sign out</button>'}</p></main>
+  ${kid?revModal():''}
+  ${ui.tq&&kid?`<div class="modal"><div class="card" style="text-align:center"><div style="font-size:3rem">⏱</div><h2>Keep going?</h2><p>${S.timer.st?'Your timer started at <b>'+clk(S.timer.st)+'</b>. ':''}It’s at <b>${fmtT(elapsed())}</b>${S.timer.run?' and still going':''}.<br>Do you want to continue that timer?</p>
+  <div class="row" style="justify-content:center"><button class="btn go" onclick="ui.tq=false;if(!S.timer.run){S.timer.start=Date.now();S.timer.run=true;tBak();save()}ui.tab='timer';render()">▶ Continue</button><button class="btn sea" onclick="ui.tq=false;ui.tab='timer';render()">See it</button></div>
+  <p><button class="link" onclick="ui.tq=false;tDiscard();render()">Throw it away</button></p></div></div>`:''}
   ${ui.gate?`<div class="modal"><div class="card"><h2>Parent PIN</h2><input id="gp" type="password" inputmode="numeric" maxlength="4" onkeydown="if(event.key==='Enter')tryGate()" aria-label="Parent PIN">
   <div class="row" style="margin-top:12px"><button class="btn sea" onclick="tryGate()">Unlock</button><button class="btn ghost" onclick="ui.gate=false;render()">Cancel</button></div></div></div>`:''}`}
 
+/* ---------- pets ---------- */
+const RAR=[['Common','#8fa3bf',60],['Uncommon','#3fbf7f',25],['Rare','#3d8bfd',10],['Epic','#a259ff',4],['Legendary','#ffb400',1]];
+const PACKS=[
+ {id:'forest',n:'Forest Pack',ic:'🌲',p:40,pets:[['🐿️','Nutmeg',0],['🦔','Prickles',0],['🦉','Hoot',1],['🦌','Bambi',1],['🐻','Bruno',2],['🐺','Shadow',3],['🦚','Plume',4]]},
+ {id:'space',n:'Space Pack',ic:'🚀',p:40,pets:[['👽','Zorp',0],['🤖','Beep',0],['👾','Pixel',1],['🛸','Zoom',1],['🪐','Saturn',2],['🌟','Nova',3],['☄️','Comet',4]]},
+ {id:'candy',n:'Candy Pack',ic:'🍭',p:40,pets:[['🐰','Marsh',0],['🐹','Cookie',0],['🦄','Sprinkle',1],['🐷','Waffles',1],['🦩','Bubblegum',2],['🐥','Custard',3],['🦋','Sugarwing',4]]},
+ {id:'ocean',n:'Ocean Pack',ic:'🌊',p:40,pets:[['🐟','Bubbles',0],['🐢','Shelly',0],['🐙','Inky',1],['🐬','Splash',1],['🦈','Finn',2],['🐳','Moby',3],['🧜','Coral',4]]},
+ {id:'fantasy',n:'Fantasy Pack',ic:'🐉',p:60,pets:[['🐸','Prince',0],['🐴','Comet',0],['🦄','Aurora',1],['🧚','Twinkle',1],['🐲','Ember',2],['🦅','Skyfire',3],['🐉','Drako',4]]}];
+const STARTERS=[['🐶','Buddy'],['🐱','Whiskers'],['🐰','Clover']];
+const FOOD=[['🍖','Snack',2,10],['🥕','Treat',3,16],['🎾','Toy',4,25]];
+const DECOR=[['🛏️','Cozy bed',20],['🪴','Plant',15],['🧶','Yarn ball',12],['🖼️','Picture',25],['💡','Lamp',18],['🌈','Rainbow rug',30]];
+const plv=x=>Math.floor(Math.sqrt((x||0)/20))+1;
+const petBy=id=>(S.pets||[]).find(p=>p.id===id);
+const actPet=()=>petBy(S.pa)||(S.pets||[])[0];
+function adopt(i){const a=STARTERS[i];if(!a||(S.pets||[]).length)return;const p={id:uid(),e:a[0],nm:a[1],r:0,xp:0,pk:'start'};S.pets.push(p);S.pa=p.id;S.setAt=Date.now();save();sfx('win');boom();toast('You adopted '+a[1]+'! 🐾');render()}
+function setPet(id){S.pa=id;S.setAt=Date.now();save();render()}
+function namePet(){const p=actPet();if(!p)return;const n=prompt('New name?',p.nm);if(n&&n.trim()){p.nm=n.trim().slice(0,14);p.xp=(p.xp||0);save();render()}}
+function petXp(p,n){const l0=plv(p.xp);p.xp=(p.xp||0)+n;if(plv(p.xp)>l0)toast(p.nm+' grew to level '+plv(p.xp)+'! 🎉')}
+function feed(i){const f=FOOD[i],p=actPet();if(!p||S.coins<f[2])return;coin(-f[2],'pet');petXp(p,f[3]);sfx('coin');save();ui.pf=f[0];render();setTimeout(()=>{ui.pf='';render()},700)}
+function buyDecor(i){const d=DECOR[i],k='pd:'+d[0];if(S.own.includes(k)||S.coins<d[2])return;coin(-d[2],'pet');S.own.push(k);sfx('win');save();render()}
+function openPack(id){const pk=PACKS.find(x=>x.id===id);if(!pk||S.coins<pk.p)return;coin(-pk.p,'pack');
+  let t=Math.random()*100,ri=0;for(let i=0;i<RAR.length;i++){t-=RAR[i][2];if(t<0){ri=i;break}}
+  let pool=pk.pets.filter(x=>x[2]===ri);if(!pool.length)pool=pk.pets.filter(x=>x[2]===0);const c=pool[Math.floor(Math.random()*pool.length)];
+  const have=S.pets.find(p=>p.e===c[0]&&p.nm===c[1]);let dup=false;
+  if(have){dup=true;coin(5,'dup');petXp(have,30)}else{const p={id:uid(),e:c[0],nm:c[1],r:c[2],xp:0,pk:pk.id};S.pets.push(p);if(!S.pa)S.pa=p.id}
+  save();ui.rev={e:c[0],n:c[1],r:c[2],dup:dup,go:false};render();setTimeout(()=>{if(ui.rev){ui.rev.go=true;sfx('win');boom();render()}},1400)}
+function closeRev(){ui.rev=null;render()}
+function revModal(){const v=ui.rev;if(!v)return '';const R=RAR[v.r];
+  return `<div class="modal" style="z-index:30"><div class="card" style="text-align:center;max-width:320px">${v.go?`<div style="font-size:5.5rem;filter:drop-shadow(0 0 14px ${R[1]})">${v.e}</div><h2>${v.n}</h2><p><b style="color:${R[1]}">${R[0]}</b></p><p class="mut">${v.dup?'You already had this one! +5 🪙 back and it got extra love.':'New friend added to your collection!'}</p><button class="btn go" onclick="closeRev()">Yay!</button>`:`<div style="font-size:5rem;display:inline-block;animation:flick .25s infinite alternate">🥚</div><h2>Opening…</h2>`}</div></div>`}
+function petRoom(){const p=actPet(),dec=DECOR.filter(d=>S.own.includes('pd:'+d[0])).map(d=>`<span style="font-size:2rem;margin:0 4px">${d[0]}</span>`).join('');
+  return `<div class="card" style="text-align:center;background:#e8f6ff"><h2>${p.nm} <button class="link" onclick="namePet()">✏️</button></h2><p class="mut">Level ${plv(p.xp)} · <b style="color:${RAR[p.r||0][1]}">${RAR[p.r||0][0]}</b></p>
+  <div style="font-size:6rem;line-height:1.1;${ui.pf?'transform:scale(1.2)':''}" class="bob">${p.e}</div><div>${ui.pf||''}</div><div style="min-height:44px">${dec}</div>
+  <div class="meter"><i style="width:${Math.round(((p.xp||0)-20*Math.pow(plv(p.xp)-1,2))/(20*(Math.pow(plv(p.xp),2)-Math.pow(plv(p.xp)-1,2)))*100)}%"></i></div><p class="mut">${p.nm} is always happy to see you. No rush!</p></div>
+  <h3 class="sec">Care for ${p.nm}</h3><div class="grid">${FOOD.map((f,i)=>`<div class="card rw"><div class="ic">${f[0]}</div><h3>${f[1]} · +${f[3]} XP</h3><button class="btn ${S.coins>=f[2]?'go':'ghost'}" ${S.coins>=f[2]?'':'disabled'} onclick="feed(${i})">${f[2]} 🪙</button></div>`).join('')}</div>
+  <h3 class="sec">Decorate the room</h3><div class="grid">${DECOR.map((d,i)=>{const ow=S.own.includes('pd:'+d[0]);return `<div class="card rw"><div class="ic">${d[0]}</div><h3>${d[1]}</h3><button class="btn ${ow||S.coins<d[2]?'ghost':'go'}" ${ow||S.coins<d[2]?'disabled':''} onclick="buyDecor(${i})">${ow?'Owned ✓':d[2]+' 🪙'}</button></div>`}).join('')}</div>`}
+function petPacks(){return '<div class="grid">'+PACKS.map(k=>`<div class="card rw"><div class="ic">${k.ic}</div><h3>${k.n}</h3><p class="mut">${k.pets.length} pets to find</p><button class="btn ${S.coins>=k.p?'go':'ghost'}" ${S.coins>=k.p?'':'disabled'} onclick="openPack('${k.id}')">${S.coins>=k.p?'Open · '+k.p+' 🪙':(k.p-S.coins)+' more coins'}</button></div>`).join('')+'</div><p class="mut">Packs use coins only. Rarer pets are harder to find!</p>'}
+function petBook(){return PACKS.map(k=>`<h3 class="sec">${k.ic} ${k.n}</h3><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(100px,1fr))">`+k.pets.map(c=>{const m=S.pets.find(p=>p.e===c[0]&&p.nm===c[1]),R=RAR[c[2]];
+   return `<div class="card" style="text-align:center;padding:10px;border:3px solid ${m?R[1]:'#ccd'}"><div style="font-size:2.6rem;${m?'':'filter:brightness(0) opacity(.25)'}">${c[0]}</div><b>${m?c[1]:'???'}</b><br><small style="color:${R[1]}">${R[0]}</small>${m?(S.pa===m.id?'<br><small>⭐ with you</small>':`<br><button class="btn sm sea" onclick="setPet('${m.id}')">Pick</button>`):''}</div>`}).join('')+'</div>').join('')}
+function vPets(){const t=document.title;
+  if(!(S.pets||[]).length)return `<div class="card" style="text-align:center"><h2>🐾 Adopt a pet!</h2><p>Pick a friend to take home. It’s free, and you can find more in packs later.</p><div class="row" style="justify-content:center">${STARTERS.map((a,i)=>`<button class="btn go" style="font-size:1.1rem" onclick="adopt(${i})"><span style="font-size:2.6rem;display:block">${a[0]}</span>${a[1]}</button>`).join('')}</div></div>`;
+  const pt=ui.pt||'room';
+  return `<h2 class="sec">🐾 Pets</h2><div class="tile t2 wide">You have <b>🪙 ${S.coins}</b>coins</div><div class="row" style="margin:8px 0">${[['room','🏠 Room'],['packs','📦 Packs'],['book','📖 Collection']].map(a=>`<button class="btn sm ${pt===a[0]?'sea':'ghost'}" onclick="ui.pt='${a[0]}';render()">${a[1]}</button>`).join('')}</div>${pt==='room'?petRoom():pt==='packs'?petPacks():petBook()}<p class="mut">Pets are just for fun. Patch only as long as your eye-care professional says.</p>`}
+
 setInterval(()=>{if(!S)return;const e=$('#tm'),r=$('#rf');if(e)e.textContent=fmtT(elapsed());if(r)r.style.strokeDashoffset=ringOff()},500);
-setInterval(()=>{if(AU&&S&&!document.hidden)sync()},20000);
+setInterval(()=>{if(AU&&S&&!document.hidden)sync()},10000);
+['focus','online','visibilitychange'].forEach(ev=>addEventListener(ev,()=>{if(AU&&S&&!document.hidden)sync()}));
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button')&&!e.target.closest('.gcell'))sfx('tap')});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
 boot();
