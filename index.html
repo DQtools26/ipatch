@@ -148,7 +148,7 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(AU){c
 const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const today=()=>ds(new Date());
 const fmtMin=m=>{const h=Math.floor(m/60),r=m%60;return h?(h+'h'+(r?' '+r+'m':'')):r+'m'};
-const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,cpl:5,gp:3,gc:3,sm:5,sd:1,ms:[5,10,20,40,80,150],bo:0,b1:3,b2:6,b3:9,bonus:{},own:[],pets:[],pa:'',px:0,setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
+const fresh=()=>({uid:'',pin:'',char:'🦊',goal:120,cpg:10,cpl:5,gp:3,gc:3,epp:0,sm:5,sd:1,ms:[5,10,20,40,80,150],bo:0,b1:3,b2:6,b3:9,bonus:{},own:[],pets:[],pa:'',px:0,fz:{},setAt:Date.now(),coins:0,xp:0,logs:{},goalOn:{},awarded:{},tx:[],
   rewards:[{id:1,name:'Extra bedtime story',desc:'One more chapter!',price:15,ic:'📖'}],reqs:[],pending:[],timer:{run:false,start:0,acc:0}});
 const nid=()=>Date.now()*10+Math.floor(Math.random()*10),uid=()=>Date.now()+'-'+Math.random().toString(36).slice(2,7);
 const pn=()=>S.pending.filter(e=>e.st!=='done'),rws=()=>S.rewards.filter(r=>!r.del);
@@ -236,12 +236,13 @@ async function signOut(){try{await sync()}catch(x){}AU=null;saveAU();S=null;DEV=
 const canon=v=>Array.isArray(v)?'['+v.map(canon).join(',')+']':v&&typeof v==='object'?'{'+Object.keys(v).sort().map(k=>JSON.stringify(k)+':'+canon(v[k])).join(',')+'}':JSON.stringify(v);
 const RK={pending:0,denied:1,approved:2,used:3,refunded:3,archived:4};
 const byId=a=>a.slice().sort((x,y)=>String(x.id)<String(y.id)?-1:1);
-const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,cpl:S.cpl,gp:S.gp,gc:S.gc,sm:S.sm,sd:S.sd,ms:S.ms,bo:S.bo,b1:S.b1,b2:S.b2,b3:S.b3,bonus:S.bonus,own:S.own.slice().sort(),pets:byId(S.pets||[]),pa:S.pa||'',px:S.px||0,setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
+const snap=()=>({pin:S.pin,char:S.char,goal:S.goal,cpg:S.cpg,cpl:S.cpl,gp:S.gp,gc:S.gc,epp:S.epp||0,sm:S.sm,sd:S.sd,ms:S.ms,bo:S.bo,b1:S.b1,b2:S.b2,b3:S.b3,bonus:S.bonus,own:S.own.slice().sort(),pets:byId(S.pets||[]),pa:S.pa||'',px:S.px||0,fz:S.fz||{},setAt:S.setAt||0,tx:byId(S.tx),pending:byId(S.pending),rewards:byId(S.rewards),reqs:byId(S.reqs),awarded:S.awarded,goalOn:S.goalOn});
 function uni(x,y,f){const m=new Map();(x||[]).concat(y||[]).forEach(e=>{const o=m.get(e.id);m.set(e.id,o?f(o,e):e)});return Array.from(m.values())}
 function mergeIn(r){
-  if((r.setAt||0)>=(S.setAt||0)){['pin','char','goal','cpg','cpl','gp','gc','sm','sd','ms','bo','b1','b2','b3','pa','px','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
+  if((r.setAt||0)>=(S.setAt||0)){['pin','char','goal','cpg','cpl','gp','gc','epp','sm','sd','ms','bo','b1','b2','b3','pa','px','setAt'].forEach(k=>{if(r[k]!==undefined)S[k]=r[k]})}
   S.tx=uni(S.tx,r.tx,o=>o);S.pending=uni(S.pending,r.pending,(o,e)=>o.st==='done'?o:e);
   S.rewards=uni(S.rewards,r.rewards,(o,e)=>o.del?o:e);S.reqs=uni(S.reqs,r.reqs,(o,e)=>(RK[e.st]||0)>(RK[o.st]||0)?e:o);S.own=Array.from(new Set((S.own||[]).concat(r.own||[])));S.pets=uni(S.pets||[],r.pets,(o,e)=>(e.xp||0)>(o.xp||0)?e:o);
+  S.fz=S.fz||{};Object.keys(r.fz||{}).forEach(k=>{if(Math.abs(r.fz[k])>Math.abs(S.fz[k]||0))S.fz[k]=r.fz[k]});
   S.awarded=Object.assign({},r.awarded,S.awarded);S.bonus=Object.assign({},r.bonus,S.bonus);S.goalOn=Object.assign({},r.goalOn,S.goalOn);derive()}
 function sy(t){ui.sy=t;const e=$('#cs');if(e)e.textContent=t}
 function rerender(){const a=document.activeElement;if(!(a&&a.tagName==='INPUT'))render()}
@@ -269,14 +270,14 @@ async function fromLink(){const h=location.hash;
     if(!S){S=fresh();S.pin=md.pin||'';S.char=md.char||'🦊';S.setAt=1}
     S.uid=u.id;derive();save();ui.msg='';ui.cr=false;if(p.get('type')==='recovery')ui.recover=true}catch(x){}}
 async function boot(){
-  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];if(S.cpl==null)S.cpl=5;if(S.gp==null)S.gp=3;if(S.gc==null)S.gc=3;if(S.sm==null){S.sm=5;S.sd=1;S.ms=[5,10,20,40,80,150]}if(S.bo==null){S.bo=0;S.b1=3;S.b2=6;S.b3=9}S.bonus=S.bonus||{};S.own=S.own||[];S.pets=S.pets||[];S.pa=S.pa||'';S.px=S.px||0;
+  if(S){delete S.pw;delete S.email;S.tx=S.tx||[];S.setAt=S.setAt||0;S.rewards=S.rewards||[];S.awarded=S.awarded||{};S.goalOn=S.goalOn||{};S.reqs=S.reqs||[];if(S.cpl==null)S.cpl=5;if(S.gp==null)S.gp=3;if(S.gc==null)S.gc=3;if(S.sm==null){S.sm=5;S.sd=1;S.ms=[5,10,20,40,80,150]}if(S.bo==null){S.bo=0;S.b1=3;S.b2=6;S.b3=9}S.bonus=S.bonus||{};S.own=S.own||[];S.pets=S.pets||[];S.pa=S.pa||'';S.px=S.px||0;S.fz=S.fz||{};S.epp=S.epp||0;
     if(!S.tx.length){Object.keys(S.logs||{}).forEach(d=>S.tx.push({id:uid(),k:'min',d:d,n:S.logs[d]}));if(S.coins)S.tx.push({id:uid(),k:'coin',n:S.coins,w:'migrate'})}
     S.pending.forEach(e=>{e.st=e.st||'new'});derive();streakAward();save()}
   await fromLink();
   if(AU&&!S){S=fresh();S.setAt=0;S.rewards=[];S.uid=AU.uid;derive()}
   if(AU&&S&&DEV){ui.mode=DEV==='kid'?'kid':'parent';ui.tab=DEV==='kid'?'home':'ov'}
   if(S&&!(S.timer.run||S.timer.acc)){try{const b=JSON.parse(localStorage.getItem('ipatch.tmr')||'null');if(b&&(b.run||b.acc)){S.timer=b;save()}}catch(e){}}
-  if(S&&(S.timer.run||S.timer.acc)&&ui.mode==='kid')ui.tq=true;
+  if(S&&(S.timer.run||S.timer.acc)&&ui.mode!=='parent')ui.tq=true;
   render();sync()}
 
 function openGate(){ui.gate=true;render();setTimeout(()=>{const g=$('#gp');g&&g.focus()},50)}
@@ -286,17 +287,26 @@ function setTab(t){if(G.on&&t!=='play')gEnd();ui.tab=t;render()}
 
 /* ---------- streaks ---------- */
 const MD=[3,7,14,30,60,100];
-const isSD=d=>(S.logs[d]||0)>0&&(S.logs[d]||0)>=Math.min(S.sm||5,S.goalOn[d]||S.goal);
+const isFz=d=>!!(S.fz&&S.fz[d]>0);
+const isSD=d=>isFz(d)||(S.logs[d]||0)>0&&(S.logs[d]||0)>=Math.min(S.sm||5,S.goalOn[d]||S.goal);
 const dayDiff=(a,b)=>Math.round((new Date(b+'T12:00')-new Date(a+'T12:00'))/864e5);
-function runs(){const R=[];let cur=[];Object.keys(S.logs).filter(isSD).sort().forEach(d=>{if(cur.length&&dayDiff(cur[cur.length-1],d)===1)cur.push(d);else{cur=[d];R.push(cur)}});return R}
+function runs(){const R=[];let cur=[];Array.from(new Set(Object.keys(S.logs).concat(Object.keys(S.fz||{})))).filter(isSD).sort().forEach(d=>{if(cur.length&&dayDiff(cur[cur.length-1],d)===1)cur.push(d);else{cur=[d];R.push(cur)}});return R}
 function streakAward(){let last=0;runs().forEach(r=>r.forEach((d,i)=>{const k=i+1;
-  if(k>=2&&S.sd&&!S.tx.some(t=>t.id==='sd-'+d))S.tx.push({id:'sd-'+d,k:'coin',n:S.sd,w:'streak',d:d});
+  if(k>=2&&S.sd&&!isFz(d)&&!S.tx.some(t=>t.id==='sd-'+d))S.tx.push({id:'sd-'+d,k:'coin',n:S.sd,w:'streak',d:d});
   const mi=MD.indexOf(k);if(mi>=0&&!S.tx.some(t=>t.id==='sm-'+k)){S.tx.push({id:'sm-'+k,k:'coin',n:S.ms[mi]||0,w:'streak',d:d});last=k}}));derive();return last}
 const niceDate=d=>new Date(d+'T12:00').toLocaleDateString('default',{month:'short',day:'numeric'});
+function fzToggle(d){S.fz=S.fz||{};S.fz[d]=isFz(d)?-Date.now():Date.now();streakAward();save();toast(isFz(d)?'❄️ Streak day added':'Freeze removed');render()}
+function streakTrack(){const t=today(),days=[];for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);days.push(ds(d))}
+  return `<div class="card"><h3>🔥 Streak tracker: ${streak()} days</h3><p class="mut">Busy day or a glitch? Tap a day to freeze it. A frozen day ❄️ keeps the streak going (it doesn’t pay the daily coin). Tap again to undo.</p>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">${days.map(d=>{const real=(S.logs[d]||0)>0&&(S.logs[d]||0)>=Math.min(S.sm||5,S.goalOn[d]||S.goal),fz=isFz(d);
+   return `<button class="btn sm ${real?'go':fz?'sea':'ghost'}" style="padding:6px 2px" ${real?'disabled':''} onclick="fzToggle('${d}')">${new Date(d+'T12:00').getDate()}<br>${real?'✅':fz?'❄️':'—'}</button>`}).join('')}</div>
+  <p><button class="btn sea" onclick="fzToggle('${t}')">${isFz(t)?'Unfreeze today':'❄️ Freeze today'}</button></p></div>`}
+function streakStrip(){const c=streak(),t=today(),m=S.logs[t]||0,need=Math.min(S.sm||5,S.goalOn[t]||S.goal),saved=m>=need||isFz(t);
+  return `<div class="card" style="display:flex;align-items:center;gap:12px"><div style="font-size:2.2rem">${isFz(t)&&m<need?'❄️':'🔥'}</div><div style="flex:1"><b>${c} day streak</b><br><small class="mut">${saved?'Today is saved. Nice job! See you tomorrow!':'Patch '+(need-m)+' more minute'+(need-m===1?'':'s')+' today to keep it going!'}</small></div><button class="btn sm sea" onclick="setTab('cal')">See</button></div>`}
 function streakCard(){const c=streak(),t=today(),m=S.logs[t]||0,need=Math.min(S.sm||5,S.goalOn[t]||S.goal),pm=pn().filter(e=>e.d===t).reduce((a,e)=>a+e.m,0),saved=m>=need;
   const ni=MD.findIndex(k=>!S.tx.some(x=>x.id==='sm-'+k)),nk=ni<0?0:MD[ni],left=need-m;
   return `<div class="card streak"><div class="flame ${c?'lit':''}">🔥</div><div class="disp big">${c} day streak</div>
-  <p>${saved?'✅ Streak saved for today!':m+pm>=need?'⏳ Waiting for a grown-up to say OK':'Patch '+left+' more minute'+(left>1?'s':'')+' today to save your streak!'}</p>
+  <p>${isFz(t)&&!saved?'❄️ A grown-up froze today. Your streak is safe!':saved?'✅ Streak saved for today!':m+pm>=need?'⏳ Waiting for a grown-up to say OK':'Patch '+left+' more minute'+(left>1?'s':'')+' today to save your streak!'}</p>
   ${nk?`<div class="meter"><i style="width:${Math.min(100,Math.round(c/nk*100))}%"></i></div><p class="mut">${Math.max(0,nk-c)} more day${nk-c===1?'':'s'} to a ${nk}-day streak: +${S.ms[ni]||0} 🪙</p>`:'<p class="mut">You got every streak badge! 🏆</p>'}</div>`}
 function timeline(){const cur=streak(),ni=MD.findIndex(k=>!S.tx.some(x=>x.id==='sm-'+k));
   return '<div class="card"><h3>🏆 Streak timeline</h3><p class="mut">Patch '+(S.sm||5)+'+ minutes a day to keep climbing.'+(S.sd?' Every streak day after the first gives +'+S.sd+' 🪙.':'')+'</p><div class="tl">'+MD.map((k,i)=>{const a=S.tx.find(x=>x.id==='sm-'+k),nx=i===ni;
@@ -312,22 +322,36 @@ function saveStreak(){const m=parseInt($('#sm').value,10),d=parseInt($('#sd').va
   S.sm=m;S.sd=d;S.ms=ms;S.setAt=Date.now();streakAward();save();toast('Streak settings saved');render()}
 
 /* ---------- game ---------- */
-const G={on:false,sc:0,t:0,c:-1,iv:0,tm:0,res:null};
+const G={on:false,sc:0,t:0,c:-1,b:-1,m:'easy',iv:0,tm:0,res:null};
 const playsToday=()=>S.tx.filter(t=>t.w==='game'&&t.d===today()).length;
-const gBoard=()=>Array.from({length:9},(_,i)=>`<button class="gcell" onclick="gTap(${i})" aria-label="Tile ${i+1}">${i===G.c?'🪙':''}</button>`).join('');
+const extrasToday=()=>S.tx.filter(t=>t.w==='xplay'&&t.d===today()).length;
+const maxPlays=()=>S.gp?S.gp+extrasToday():0;
+const gCells=()=>G.m==='hard'?16:9;
+const gBoard=()=>G.m==='mem'?G.cards.map((c,i)=>`<button class="gcell" onclick="memTap(${i})" aria-label="Card ${i+1}">${c.open||c.done?c.e:'❓'}</button>`).join(''):Array.from({length:gCells()},(_,i)=>`<button class="gcell" onclick="gTap(${i})" aria-label="Tile ${i+1}">${i===G.c?'🪙':i===G.b?'💣':''}</button>`).join('');
 function gDraw(){const m=$('#gm'),x=$('#gs');if(m)m.innerHTML=gBoard();if(x)x.textContent='⏱ '+G.t+'s · ⭐ '+G.sc}
-function gMove(){let c;do{c=Math.floor(Math.random()*9)}while(c===G.c);G.c=c;gDraw()}
-function gStart(){if(G.on)return;if(!S.gp||playsToday()>=S.gp){toast('No plays left today');return}
-  G.on=true;G.sc=0;G.t=20;G.res=null;sfx('start');G.iv=setInterval(gMove,900);G.tm=setInterval(()=>{G.t--;if(G.t<=0)gEnd();else gDraw()},1000);render();gMove()}
-function gTap(i){if(!G.on||i!==G.c)return;G.sc++;sfx('coin');clearInterval(G.iv);gMove();G.iv=setInterval(gMove,Math.max(450,900-G.sc*25))}
-function gEnd(){clearInterval(G.iv);clearInterval(G.tm);if(!G.on)return;G.on=false;G.c=-1;const n=Math.min(S.gc||0,Math.floor(G.sc/5));
-  S.tx.push({id:uid(),k:'coin',n:n,w:'game',d:today()});derive();save();G.res={sc:G.sc,n:n};sfx(n?'win':'done');if(n)boom();render()}
-function vPlay(){if(!S.gp)return '<div class="card"><h2>🎮 Treasure Tap</h2><p>Games are off right now. Ask a grown-up!</p></div>';
-  const left=Math.max(0,S.gp-playsToday());
-  return `<div class="card" style="text-align:center"><h2>🎮 Treasure Tap</h2><p class="mut">Tap the 🪙 as fast as you can for 20 seconds! Every 5 taps = 1 coin (up to ${S.gc} a game).</p>
-  <p class="big" id="gs">${G.on?'⏱ '+G.t+'s · ⭐ '+G.sc:''}</p><div id="gm" class="gboard">${G.on?gBoard():''}</div>
-  ${G.res&&!G.on?`<p class="big">${G.res.sc} taps! +${G.res.n} 🪙</p>`:''}
-  ${G.on?'':`<p class="mut">${left} play${left===1?'':'s'} left today</p><button class="btn go" ${left?'':'disabled'} onclick="gStart()">▶ Play</button>`}</div>`}
+function gMove(){const n=gCells();let c;do{c=Math.floor(Math.random()*n)}while(c===G.c);G.c=c;G.b=-1;
+  if(G.m==='hard'&&Math.random()<.6){let b;do{b=Math.floor(Math.random()*n)}while(b===c);G.b=b}gDraw()}
+const gSpeed=()=>G.m==='hard'?Math.max(300,650-G.sc*25):Math.max(450,900-G.sc*25);
+function memBuild(){const E=['🦜','🐙','⚓','🗺️','💎','🏴‍☠️'];const a=E.concat(E);for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}G.cards=a.map(e=>({e:e,open:false,done:false}));G.first=-1;G.lock=false}
+function memTap(i){if(!G.on||G.lock)return;const c=G.cards[i];if(c.open||c.done)return;c.open=true;sfx('tap');
+  if(G.first<0)G.first=i;else{const a=G.cards[G.first];if(a.e===c.e){a.done=c.done=true;a.open=c.open=false;G.sc++;G.first=-1;sfx('coin');if(G.cards.every(x=>x.done)){gDraw();setTimeout(gEnd,500);return}}
+    else{G.lock=true;const f=G.first;G.first=-1;setTimeout(()=>{G.cards[f].open=false;c.open=false;G.lock=false;gDraw()},700)}}gDraw()}
+function gStart(m){if(G.on)return;if(!S.gp||playsToday()>=maxPlays()){toast('No plays left today');return}
+  G.m=m==='hard'?'hard':m==='mem'?'mem':'easy';G.on=true;G.sc=0;G.t=G.m==='hard'?25:G.m==='mem'?45:20;G.res=null;sfx('start');if(G.m==='mem'){memBuild();G.tm=setInterval(()=>{G.t--;if(G.t<=0)gEnd();else gDraw()},1000);render();return}G.iv=setInterval(gMove,gSpeed());G.tm=setInterval(()=>{G.t--;if(G.t<=0)gEnd();else gDraw()},1000);render();gMove()}
+function gTap(i){if(!G.on)return;if(i===G.b){G.sc=Math.max(0,G.sc-3);sfx('done');clearInterval(G.iv);gMove();G.iv=setInterval(gMove,gSpeed());return}
+  if(i!==G.c)return;G.sc++;sfx('coin');clearInterval(G.iv);gMove();G.iv=setInterval(gMove,gSpeed())}
+function gEnd(){clearInterval(G.iv);clearInterval(G.tm);if(!G.on)return;G.on=false;G.c=-1;G.b=-1;G.lock=false;const hard=G.m==='hard',mem=G.m==='mem',cap=hard&&S.gc?S.gc+2:(S.gc||0),n=Math.min(cap,Math.floor(G.sc/(hard?4:mem?2:5)));
+  S.tx.push({id:uid(),k:'coin',n:n,w:'game',d:today(),m:G.m});derive();save();G.res={sc:G.sc,n:n,m:G.m};sfx(n?'win':'done');if(n)boom();render()}
+function buyPlay(){const p=S.epp;if(!p||S.coins<p||extrasToday()>=3||playsToday()<maxPlays())return;S.tx.push({id:uid(),k:'coin',n:-p,w:'xplay',d:today()});derive();save();sfx('coin');toast('Extra play added! 🎮');render()}
+function xCard(){const p=S.epp;if(!S.gp||!p)return '';const left=maxPlays()-playsToday(),can=left<=0&&extrasToday()<3&&S.coins>=p;
+  return `<div class="card rw"><div class="ic">🎮</div><h3>Extra game play</h3><p class="mut">One more play today (up to 3 extra a day).</p><button class="btn ${can?'go':'ghost'}" ${can?'':'disabled'} onclick="buyPlay()">${left>0?'Use your plays first':extrasToday()>=3?'No more today':S.coins<p?(p-S.coins)+' more coins':'Buy · '+p+' 🪙'}</button></div>`}
+function vPlay(){if(!S.gp)return '<div class="card"><h2>🎮 Games</h2><p>Games are off right now. Ask a grown-up!</p></div>';
+  const left=Math.max(0,maxPlays()-playsToday()),hd=G.m==='hard';
+  if(G.on)return `<div class="card" style="text-align:center"><h2>${G.m==='mem'?'🧠 Pirate Match':hd?'⚡ Treasure Rush':'🎮 Treasure Tap'}</h2><p class="mut">${G.m==='mem'?'Flip two cards. Find all the matching pairs!':hd?'Dodge the 💣! Each one costs 3 taps.':'Tap the 🪙 as fast as you can!'}</p><p class="big" id="gs">⏱ ${G.t}s · ⭐ ${G.sc}</p><div id="gm" class="gboard" style="${hd||G.m==='mem'?'grid-template-columns:repeat(4,1fr);max-width:360px':''}">${gBoard()}</div></div>`;
+  return (G.res?`<div class="card" style="text-align:center"><p class="big">${G.res.sc} ${G.res.m==='mem'?'pairs':'taps'}! +${G.res.n} 🪙</p></div>`:'')+
+  `<p class="mut" style="text-align:center">Pick a game. You have <b>${left}</b> play${left===1?'':'s'} left today.</p><div class="grid">
+  <div class="card rw"><div class="ic">🎮</div><h3>Treasure Tap</h3><p class="mut">20 seconds. Every 5 taps = 1 coin (up to ${S.gc} a game).</p><button class="btn go" ${left?'':'disabled'} onclick="gStart('easy')">▶ Play</button></div>
+  <div class="card rw"><div class="ic">⚡</div><h3>Treasure Rush</h3><p class="mut">Harder! 25 seconds, bigger board, faster, and 💣 to dodge. Every 4 taps = 1 coin (up to ${S.gc?S.gc+2:0}).</p><button class="btn go" ${left?'':'disabled'} onclick="gStart('hard')">▶ Play</button></div><div class="card rw"><div class="ic">🧠</div><h3>Pirate Match</h3><p class="mut">A memory game! 45 seconds to match 6 pairs. Every 2 pairs = 1 coin (up to ${S.gc}).</p><button class="btn go" ${left?'':'disabled'} onclick="gStart('mem')">▶ Play</button></div>${xCard()}</div>`}
 
 /* ---------- daily chest, saving-for ---------- */
 function bonusRow(){if(!S.bo)return '';const d=today();
@@ -361,13 +385,14 @@ function notifyReq(q){if(ui.mode!=='kid')return;
   if(q.st==='approved'){sfx('win');boom();toast('🎉 You earned: '+q.name+'!')}
   else if(q.st==='denied'||q.st==='refunded'){sfx('done');toast('↩ Coins back: +'+q.price+' 🪙 for '+q.name)}}
 function funCard(){return `<div class="card"><h3>Fun &amp; rewards</h3><label for="lc">Coins for each new level</label><input id="lc" type="number" min="0" value="${S.cpl}">
+  <label for="epx">Price of an extra game play in coins (0 = not for sale, up to 3 extra a day)</label><input id="epx" type="number" min="0" max="99" value="${S.epp||0}">
   <label for="gpx">Game plays per day (0 turns the game off)</label><input id="gpx" type="number" min="0" max="20" value="${S.gp}">
   <label for="gcx">Most coins one game can give</label><input id="gcx" type="number" min="0" max="50" value="${S.gc}"><label style="display:flex;gap:10px;align-items:center;margin-top:14px"><input type="checkbox" id="bo" ${S.bo?'checked':''} style="width:auto;transform:scale(1.4)"> Bonus time: extra coins for +30, +60 and +90 minutes past the daily goal</label>
   <p class="mut">Only turn this on if your child’s eye-care professional says extra patch time is OK.</p>
   <div class="row"><input id="b1" type="number" min="0" value="${S.b1}" aria-label="Coins for 30 extra minutes"><input id="b2" type="number" min="0" value="${S.b2}" aria-label="Coins for 60 extra minutes"><input id="b3" type="number" min="0" value="${S.b3}" aria-label="Coins for 90 extra minutes"></div>
   <p class="mut">Coins for +30 / +60 / +90 minutes</p><p><button class="btn sea" onclick="saveFun()">Save</button></p></div>`}
 function saveFun(){const a=parseInt($('#lc').value,10),b=parseInt($('#gpx').value,10),c=parseInt($('#gcx').value,10);
-  if(!(a>=0&&b>=0&&c>=0)){toast('Use numbers 0 or more');return}S.cpl=a;S.gp=b;S.gc=c;S.bo=$('#bo').checked?1:0;S.b1=Math.max(0,parseInt($('#b1').value,10)||0);S.b2=Math.max(0,parseInt($('#b2').value,10)||0);S.b3=Math.max(0,parseInt($('#b3').value,10)||0);S.setAt=Date.now();save();toast('Saved');render()}
+  if(!(a>=0&&b>=0&&c>=0)){toast('Use numbers 0 or more');return}S.cpl=a;S.gp=b;S.gc=c;S.epp=Math.max(0,parseInt($('#epx').value,10)||0);S.bo=$('#bo').checked?1:0;S.b1=Math.max(0,parseInt($('#b1').value,10)||0);S.b2=Math.max(0,parseInt($('#b2').value,10)||0);S.b3=Math.max(0,parseInt($('#b3').value,10)||0);S.setAt=Date.now();save();toast('Saved');render()}
 
 /* ---------- kid actions ---------- */
 function addCustom(){const v=parseInt($('#am').value,10);if(!(v>=1&&v<=600)){toast('Type minutes between 1 and 600');return}submit(v)}
@@ -382,6 +407,8 @@ function submit(m,src){S.pending.unshift({id:nid(),m:m,d:today(),src:src||'manua
 function okTime(id,ok){const i=S.pending.findIndex(x=>x.id===id);if(i<0||S.pending[i].st==='done')return;const e=S.pending[i];
   const v=ok?parseInt($('#pm'+id).value,10):0;e.st='done';save();
   if(ok&&v>0){sfx('coin');addMin(v,e.d)}else render()}
+function tResume(){ui.tq=false;if(!S.timer.run){S.timer.start=Date.now();S.timer.run=true}tBak();save();ui.tab='timer';render()}
+function tRestart(){ui.tq=false;S.timer={run:true,start:Date.now(),acc:0,st:Date.now()};tBak();save();ui.tab='timer';render()}
 function tDiscard(){if(confirm('Throw away this timer without logging it?')){S.timer={run:false,start:0,acc:0};tBak();save();render()}}
 function ask(id){const r=S.rewards.find(x=>x.id===id);if(!r||S.coins<r.price||isWait(r)||isGot(r))return;
   coin(-r.price,'hold');S.reqs.unshift({id:nid(),rid:r.id,name:r.name,price:r.price,st:'pending',t:today()});save();sfx('coin');toast('Asked! A grown-up will check it 🎁');render()}
@@ -434,7 +461,7 @@ function vHome(){const g=S.goalOn[today()]||S.goal,m=S.logs[today()]||0;
   ${bonusRow()}${chestBtn()}${earnNote()}${pw()}<button class="btn go" onclick="setTab('timer')">▶ Start patch time</button></div>
   </div><div class="tiles" style="grid-template-columns:repeat(2,1fr)"><div class="tile t2"><b>🪙 ${S.coins}</b>coins</div><div class="tile t3"><b>⭐ ${lvl(S.xp)}</b>level</div></div>
   ${saving()}<details class="card"><summary class="disp">Already patched? Add time (a grown-up checks it)</summary><div class="row" style="margin-top:10px"><button class="btn sea" onclick="submit(10)">+10</button><button class="btn sea" onclick="submit(15)">+15</button><button class="btn sea" onclick="submit(30)">+30</button></div>
-  <label for="am">Or type minutes</label><div class="row"><input id="am" type="number" inputmode="numeric" min="1" max="600" placeholder="minutes"><button class="btn" onclick="addCustom()">Add</button></div></details>`}
+  <label for="am">Or type minutes</label><div class="row"><input id="am" type="number" inputmode="numeric" min="1" max="600" placeholder="minutes"><button class="btn" onclick="addCustom()">Add</button></div></details>${streakStrip()}`}
 function ringOff(){const g=S.goalOn[today()]||S.goal,p=Math.min(1,((S.logs[today()]||0)+elapsed()/60000)/g);return 553*(1-p)}
 function vTimer(){const t=S.timer,idle=!t.run&&t.acc===0;
   return `<div class="card" style="text-align:center"><h2>${t.run?'Patch time! You’ve got this!':idle?'Ready?':'Paused'}</h2>
@@ -448,7 +475,7 @@ const fmtT=ms=>{const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%
 function vCal(){const y=ui.cm.getFullYear(),m=ui.cm.getMonth(),first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate(),t=today();
   let c='';['S','M','T','W','T','F','S'].forEach(d=>c+=`<div class="hd">${d}</div>`);
   for(let i=0;i<first;i++)c+='<div style="background:none"></div>';
-  for(let d=1;d<=n;d++){const k=ds(new Date(y,m,d)),cl=met(k)?'ok':(isSD(k)?'part':'');c+=`<div class="${cl} ${k===t?'now':''}">${met(k)?'⭐':isSD(k)?'🔥':d}</div>`}
+  for(let d=1;d<=n;d++){const k=ds(new Date(y,m,d)),cl=met(k)?'ok':(isSD(k)?'part':'');c+=`<div class="${cl} ${k===t?'now':''}">${met(k)?'⭐':isSD(k)?(isFz(k)&&!(S.logs[k]>0)?'❄️':'🔥'):d}</div>`}
   const done=Object.keys(S.logs).filter(met).length;
   return `<div class="card"><div class="row" style="justify-content:space-between"><button class="btn ghost sm" onclick="cal(-1)" aria-label="Previous month">◀</button>
   <h2 style="margin:0">${ui.cm.toLocaleString('default',{month:'long'})} ${y}</h2><button class="btn ghost sm" onclick="cal(1)" aria-label="Next month">▶</button></div>
@@ -480,7 +507,7 @@ function vShop(){const st=ui.st==='s';
   <div class="row" style="margin:8px 0"><button class="btn sm ${st?'ghost':'sea'}" onclick="ui.st='r';render()">🎁 Rewards</button><button class="btn sm ${st?'sea':'ghost'}" onclick="ui.st='s';render()">🎨 Style shop</button></div>`;
   if(st)return top+styleShop();
   const all=rws(),act=all.filter(r=>!(kd(r)==='once'&&isGot(r))),col=all.filter(r=>kd(r)==='once'&&isGot(r));
-  return top+earnedKid()+(act.length?'<div class="grid">'+act.map(rwCard).join('')+'</div>':'<div class="card"><p>Nothing here right now. Ask a grown-up to add rewards!</p></div>')+
+  return top+(xCard()?'<div class="grid">'+xCard()+'</div>':'')+earnedKid()+(act.length?'<div class="grid">'+act.map(rwCard).join('')+'</div>':'<div class="card"><p>Nothing here right now. Ask a grown-up to add rewards!</p></div>')+
     (col.length?'<h3 class="sec">✅ Collected</h3><div class="grid">'+col.map(rwCard).join('')+'</div>':'')+reqList()}
 
 function vLevels(){const L=lvl(S.xp),lo=60*(L-1)**2,hi=60*L**2,p=Math.round((S.xp-lo)/(hi-lo)*100);
@@ -492,7 +519,7 @@ function vOv(){const t=pn().length,rq=S.reqs.filter(q=>q.st==='pending').length,
   rows=[[t,'⏱ time entries to approve'],[rq,'✋ reward requests'],[er,'🎁 earned rewards to hand out']].filter(a=>a[0]);
   return `<div class="card pcard"><div class="row"><span style="font-size:3rem">${S.char}</span><div><h2 style="margin:0">Grown-up zone</h2><p class="mut">Here’s how your patcher is doing today</p></div></div></div>
   <div class="card"><h3>👀 Needs you</h3>${rows.length?rows.map(a=>`<div class="item"><span>${a[1]}</span><b class="price">${a[0]}</b></div>`).join('')+'<p><button class="btn go" onclick="setTab(\'req\')">Go to Approvals</button></p>':'<p>All caught up! 🎉</p>'}</div>
-  <div class="card"><h2>Today</h2>${bar()}</div>${stats()}`+chartCard(ui.range||14,true)+`<p class="mut" style="text-align:center">${done} goal days completed in total</p>`}
+  <div class="card"><h2>Today</h2>${bar()}</div>${streakTrack()}${stats()}`+chartCard(ui.range||14,true)+`<p class="mut" style="text-align:center">${done} goal days completed in total</p>`}
 function vGoals(){const h=Math.floor(S.goal/60),m=S.goal%60;
   return `<div class="card"><h2>Daily goal</h2><p class="mut">Match this to your child’s eye-care professional’s instructions.</p>
   <label>Patch time per day</label><div class="row"><input id="gh" type="number" min="0" value="${h}" aria-label="Hours"> hr <input id="gm" type="number" min="0" max="59" value="${m}" aria-label="Minutes"> min</div>
@@ -546,9 +573,10 @@ function render(){const A=$('#app');if(document.body)document.body.setAttribute(
   <nav class="${kid?'bnav':'tabs'}">${T.map(t=>`<button class="tab ${ui.tab===t[0]?'on':''}" onclick="setTab('${t[0]}')">${t[1]}${t[0]==='req'&&pend?`<i>${pend}</i>`:''}</button>`).join('')}</nav>
   <main class="${kid?'kid':''}">${V[ui.tab]()}<p class="note">iPatch tracks and motivates. It is not medical advice. Follow your eye-care professional’s instructions.${kid?'':'<br><button class="link" onclick="signOut()">Sign out</button>'}</p></main>
   ${kid?revModal():''}
-  ${ui.tq&&kid?`<div class="modal"><div class="card" style="text-align:center"><div style="font-size:3rem">⏱</div><h2>Keep going?</h2><p>${S.timer.st?'Your timer started at <b>'+clk(S.timer.st)+'</b>. ':''}It’s at <b>${fmtT(elapsed())}</b>${S.timer.run?' and still going':''}.<br>Do you want to continue that timer?</p>
-  <div class="row" style="justify-content:center"><button class="btn go" onclick="ui.tq=false;if(!S.timer.run){S.timer.start=Date.now();S.timer.run=true;tBak();save()}ui.tab='timer';render()">▶ Continue</button><button class="btn sea" onclick="ui.tq=false;ui.tab='timer';render()">See it</button></div>
-  <p><button class="link" onclick="ui.tq=false;tDiscard();render()">Throw it away</button></p></div></div>`:''}
+  ${ui.tq&&kid?`<div class="modal"><div class="card" style="text-align:center"><div style="font-size:3rem">⏱</div><h2>Your timer is still here</h2><p>${S.timer.st?'It started at <b>'+clk(S.timer.st)+'</b>. ':''}It’s at <b>${fmtT(elapsed())}</b>${S.timer.run?' and still going':''}.</p>
+  <button class="btn go" style="width:100%" onclick="tResume()">▶ Resume timer</button>
+  <button class="btn sea" style="width:100%;margin-top:10px" onclick="ui.tq=false;tFinish()">✅ End timer</button>
+  <button class="btn ghost" style="width:100%;margin-top:10px" onclick="tRestart()">🔄 Restart</button></div></div>`:''}
   ${ui.gate?`<div class="modal"><div class="card"><h2>Parent PIN</h2><input id="gp" type="password" inputmode="numeric" maxlength="4" onkeydown="if(event.key==='Enter')tryGate()" aria-label="Parent PIN">
   <div class="row" style="margin-top:12px"><button class="btn sea" onclick="tryGate()">Unlock</button><button class="btn ghost" onclick="ui.gate=false;render()">Cancel</button></div></div></div>`:''}`}
 
