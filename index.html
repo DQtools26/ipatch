@@ -342,16 +342,16 @@ function gTap(i){if(!G.on)return;if(i===G.b){G.sc=Math.max(0,G.sc-3);sfx('done')
   if(i!==G.c)return;G.sc++;sfx('coin');clearInterval(G.iv);gMove();G.iv=setInterval(gMove,gSpeed())}
 function gEnd(){clearInterval(G.iv);clearInterval(G.tm);if(!G.on)return;G.on=false;G.c=-1;G.b=-1;G.lock=false;const hard=G.m==='hard',mem=G.m==='mem',cap=hard&&S.gc?S.gc+2:(S.gc||0),n=Math.min(cap,Math.floor(G.sc/(hard?4:mem?2:5)));
   S.tx.push({id:uid(),k:'coin',n:n,w:'game',d:today(),m:G.m});derive();save();G.res={sc:G.sc,n:n,m:G.m};sfx(n?'win':'done');if(n)boom();render()}
-function buyPlay(){const p=S.epp;if(!p||S.coins<p||extrasToday()>=3||playsToday()<maxPlays())return;S.tx.push({id:uid(),k:'coin',n:-p,w:'xplay',d:today()});derive();save();sfx('coin');toast('Extra play added! 🎮');render()}
-function xCard(){const p=S.epp;if(!S.gp||!p)return '';const left=maxPlays()-playsToday(),can=left<=0&&extrasToday()<3&&S.coins>=p;
-  return `<div class="card rw"><div class="ic">🎮</div><h3>Extra game play</h3><p class="mut">One more play today (up to 3 extra a day).</p><button class="btn ${can?'go':'ghost'}" ${can?'':'disabled'} onclick="buyPlay()">${left>0?'Use your plays first':extrasToday()>=3?'No more today':S.coins<p?(p-S.coins)+' more coins':'Buy · '+p+' 🪙'}</button></div>`}
+function buyPlay(){const p=S.epp;if(!p||S.coins<p||extrasToday()>=3)return;S.tx.push({id:uid(),k:'coin',n:-p,w:'xplay',d:today()});derive();save();sfx('coin');toast('Extra play added! 🎮');render()}
+function xCard(){const p=S.epp;if(!S.gp||!p)return '';const e=extrasToday(),can=e<3&&S.coins>=p;
+  return `<div class="card" style="margin-top:14px;text-align:center"><h3>🎮 Need more plays?</h3><p class="mut">Buy one extra play for ${p} 🪙. Extra plays today: ${e} of 3.</p><button class="btn ${can?'go':'ghost'}" ${can?'':'disabled'} onclick="buyPlay()">${e>=3?'No more extras today':S.coins<p?(p-S.coins)+' more coins':'Buy extra play · '+p+' 🪙'}</button></div>`}
 function vPlay(){if(!S.gp)return '<div class="card"><h2>🎮 Games</h2><p>Games are off right now. Ask a grown-up!</p></div>';
   const left=Math.max(0,maxPlays()-playsToday()),hd=G.m==='hard';
   if(G.on)return `<div class="card" style="text-align:center"><h2>${G.m==='mem'?'🧠 Pirate Match':hd?'⚡ Treasure Rush':'🎮 Treasure Tap'}</h2><p class="mut">${G.m==='mem'?'Flip two cards. Find all the matching pairs!':hd?'Dodge the 💣! Each one costs 3 taps.':'Tap the 🪙 as fast as you can!'}</p><p class="big" id="gs">⏱ ${G.t}s · ⭐ ${G.sc}</p><div id="gm" class="gboard" style="${hd||G.m==='mem'?'grid-template-columns:repeat(4,1fr);max-width:360px':''}">${gBoard()}</div></div>`;
   return (G.res?`<div class="card" style="text-align:center"><p class="big">${G.res.sc} ${G.res.m==='mem'?'pairs':'taps'}! +${G.res.n} 🪙</p></div>`:'')+
   `<p class="mut" style="text-align:center">Pick a game. You have <b>${left}</b> play${left===1?'':'s'} left today.</p><div class="grid">
   <div class="card rw"><div class="ic">🎮</div><h3>Treasure Tap</h3><p class="mut">20 seconds. Every 5 taps = 1 coin (up to ${S.gc} a game).</p><button class="btn go" ${left?'':'disabled'} onclick="gStart('easy')">▶ Play</button></div>
-  <div class="card rw"><div class="ic">⚡</div><h3>Treasure Rush</h3><p class="mut">Harder! 25 seconds, bigger board, faster, and 💣 to dodge. Every 4 taps = 1 coin (up to ${S.gc?S.gc+2:0}).</p><button class="btn go" ${left?'':'disabled'} onclick="gStart('hard')">▶ Play</button></div><div class="card rw"><div class="ic">🧠</div><h3>Pirate Match</h3><p class="mut">A memory game! 45 seconds to match 6 pairs. Every 2 pairs = 1 coin (up to ${S.gc}).</p><button class="btn go" ${left?'':'disabled'} onclick="gStart('mem')">▶ Play</button></div>${xCard()}</div>`}
+  <div class="card rw"><div class="ic">⚡</div><h3>Treasure Rush</h3><p class="mut">Harder! 25 seconds, bigger board, faster, and 💣 to dodge. Every 4 taps = 1 coin (up to ${S.gc?S.gc+2:0}).</p><button class="btn go" ${left?'':'disabled'} onclick="gStart('hard')">▶ Play</button></div><div class="card rw"><div class="ic">🧠</div><h3>Pirate Match</h3><p class="mut">A memory game! 45 seconds to match 6 pairs. Every 2 pairs = 1 coin (up to ${S.gc}).</p><button class="btn go" ${left?'':'disabled'} onclick="gStart('mem')">▶ Play</button></div></div>${xCard()}`}
 
 /* ---------- daily chest, saving-for ---------- */
 function bonusRow(){if(!S.bo)return '';const d=today();
@@ -507,7 +507,7 @@ function vShop(){const st=ui.st==='s';
   <div class="row" style="margin:8px 0"><button class="btn sm ${st?'ghost':'sea'}" onclick="ui.st='r';render()">🎁 Rewards</button><button class="btn sm ${st?'sea':'ghost'}" onclick="ui.st='s';render()">🎨 Style shop</button></div>`;
   if(st)return top+styleShop();
   const all=rws(),act=all.filter(r=>!(kd(r)==='once'&&isGot(r))),col=all.filter(r=>kd(r)==='once'&&isGot(r));
-  return top+(xCard()?'<div class="grid">'+xCard()+'</div>':'')+earnedKid()+(act.length?'<div class="grid">'+act.map(rwCard).join('')+'</div>':'<div class="card"><p>Nothing here right now. Ask a grown-up to add rewards!</p></div>')+
+  return top+earnedKid()+(act.length?'<div class="grid">'+act.map(rwCard).join('')+'</div>':'<div class="card"><p>Nothing here right now. Ask a grown-up to add rewards!</p></div>')+
     (col.length?'<h3 class="sec">✅ Collected</h3><div class="grid">'+col.map(rwCard).join('')+'</div>':'')+reqList()}
 
 function vLevels(){const L=lvl(S.xp),lo=60*(L-1)**2,hi=60*L**2,p=Math.round((S.xp-lo)/(hi-lo)*100);
